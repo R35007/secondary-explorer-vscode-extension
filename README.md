@@ -3,21 +3,25 @@
 <table>
 	<tr>
 		<td><img src="images/logo.png" alt="Secondary Explorer Logo" width="64" /></td>
-		<td><h1>Secondary Explorer</h1></td>
+		<td>
+            <h1>Secondary Explorer</h1>
+        </td>
 	</tr>
 </table>
-
-<a href="https://buymeacoffee.com/r35007" target="_blank">
-	<img src="https://r35007.github.io/Siva_Profile/images//buymeacoffee.png" alt="Buy Me a Coffee" height="32" />
-</a>
 
 > Adds a secondary explorer view to manage files and folders—create, view, rename, and delete—outside the default workspace explorer.
 
 ---
 
+<a href="https://buymeacoffee.com/r35007" target="_blank">
+	<img src="https://r35007.github.io/Siva_Profile/images//buymeacoffee.png" alt="Buy Me a Coffee" height="50" />
+</a>
+
+
 ## Preview
 
-<img src="./images/preview.png">
+<img src="./images/preview.png" width="1000px">
+
 ---
 
 ## Features
