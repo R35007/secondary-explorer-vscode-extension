@@ -4,6 +4,8 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [Unreleased]
+
+## [1.0.0] - 2025-08-24
 
 - Initial release
+- Added secondary file explorer with CRUD actions (create, view, rename, delete)
