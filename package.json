@@ -2,20 +2,184 @@
   "name": "secondary-explorer",
   "displayName": "Secondary Explorer",
   "description": "Adds a secondary explorer view to manage files and folders—create, view, rename, and delete—outside the default workspace explorer.",
-  "version": "0.0.1",
+  "version": "1.0.0",
+  "icon": "images/logo.png",
+  "publisher": "Thinker",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/R35007/secondary-explorer-vscode-extension"
+  },
+  "author": {
+    "name": "Sivaraman",
+    "email": "sendmsg2siva@gmail.com"
+  },
+  "keywords": [
+    "vscode",
+    "explorer",
+    "file",
+    "folder",
+    "file-system",
+    "file-management",
+    "file-explorer",
+    "file-browser",
+    "file-tree",
+    "file-viewer",
+    "file-organizer",
+    "file-navigator",
+    "file-operations",
+    "secondary-explorer"
+  ],
   "engines": {
     "vscode": "^1.103.0"
   },
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "Secondary Explorer",
+      "properties": {
+        "secondaryExplorer.folders": {
+          "type": "array",
+          "description": "List of local folder paths to show in the Secondary Explorer (workspace-level recommended).",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        }
+      }
+    },
+    "views": {
+      "explorer": [
+        {
+          "id": "secondaryExplorerView",
+          "name": "Secondary Explorer",
+          "icon": "./images/explorer-icon.svg"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "secondaryExplorerView",
+        "contents": "No folders configured.\n[Pick a Folder](command:secondary-explorer.pickFolder)",
+        "when": "!secondaryExplorer.folders || secondaryExplorer.folders.length == 0"
+      }
+    ],
     "commands": [
       {
-        "command": "secondary-explorer.helloWorld",
-        "title": "Hello World"
+        "command": "secondary-explorer.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "secondary-explorer.openSettings",
+        "title": "Settings",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "secondary-explorer.createEntry",
+        "title": "New File/Folder",
+        "icon": "$(add)"
+      },
+      {
+        "command": "secondary-explorer.deleteEntry",
+        "title": "Delete",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "secondary-explorer.renameEntry",
+        "title": "Rename",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "secondary-explorer.openFile",
+        "title": "Open File",
+        "icon": "$(eye)"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "secondary-explorer.refresh",
+          "when": "false"
+        },
+        {
+          "command": "secondary-explorer.openSettings",
+          "when": "false"
+        },
+        {
+          "command": "secondary-explorer.createEntry",
+          "when": "false"
+        },
+        {
+          "command": "secondary-explorer.deleteEntry",
+          "when": "false"
+        },
+        {
+          "command": "secondary-explorer.renameEntry",
+          "when": "false"
+        },
+        {
+          "command": "secondary-explorer.openFile",
+          "when": "false"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "secondary-explorer.openFile",
+          "when": "view == secondaryExplorerView && viewItem == file",
+          "group": "navigation"
+        },
+        {
+          "command": "secondary-explorer.renameEntry",
+          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
+          "group": "navigation@1"
+        },
+        {
+          "command": "secondary-explorer.deleteEntry",
+          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
+          "group": "navigation@2"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "secondary-explorer.refresh",
+          "when": "view == secondaryExplorerView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "secondary-explorer.openSettings",
+          "when": "view == secondaryExplorerView",
+          "group": "navigation@2"
+        },
+        {
+          "command": "secondary-explorer.createEntry",
+          "when": "view == secondaryExplorerView",
+          "group": "navigation@3"
+        },
+        {
+          "command": "secondary-explorer.renameEntry",
+          "when": "view == secondaryExplorerView",
+          "group": "navigation@4"
+        },
+        {
+          "command": "secondary-explorer.deleteEntry",
+          "when": "view == secondaryExplorerView",
+          "group": "navigation@5"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "secondary-explorer.deleteEntry",
+        "key": "delete",
+        "when": "focusedView == secondaryExplorerView && !inputFocus"
       }
     ]
   },
@@ -31,7 +195,7 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.103.0",
+    "@types/vscode": "^1.100.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "@typescript-eslint/eslint-plugin": "^8.39.0",

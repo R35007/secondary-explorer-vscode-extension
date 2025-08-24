@@ -1,71 +1,100 @@
-# secondary-explorer README
 
-This is the README for your extension "secondary-explorer". After writing up a brief description, we recommend including the following sections.
 
-## Features
+<table>
+	<tr>
+		<td><img src="images/logo.png" alt="Secondary Explorer Logo" width="64" /></td>
+		<td><h1>Secondary Explorer</h1></td>
+	</tr>
+</table>
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+<a href="https://buymeacoffee.com/r35007" target="_blank">
+	<img src="https://r35007.github.io/Siva_Profile/images//buymeacoffee.png" alt="Buy Me a Coffee" height="32" />
+</a>
 
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
-
-## Requirements
-
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
-
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
+> Adds a secondary explorer view to manage files and folders—create, view, rename, and delete—outside the default workspace explorer.
 
 ---
 
-## Following extension guidelines
+## Preview
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
+<img src="./images/preview.png">
+---
 
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
+## Features
 
-## Working with Markdown
+- 📁 **Secondary Explorer View**: Manage files and folders in a dedicated sidebar, separate from the default workspace explorer.
+- 🗂️ **Multi-Folder Support**: Configure multiple local folders to display and organize.
+- 📝 **File & Folder Operations**: Create, view, rename, and delete files/folders directly from the secondary explorer.
+- 🔄 **Quick Actions**: Refresh, open settings, and perform file operations with context menus and keybindings.
 
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
+---
 
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
+## Getting Started
 
-## For more information
+### Installation
 
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+1. Open the Extensions view in VS Code (`Ctrl+Shift+X`).
+2. Search for `Secondary Explorer`.
+3. Click **Install**.
 
-**Enjoy!**
+### Activation
+
+The extension activates automatically on startup and adds a new "Secondary Explorer" view to the sidebar.
+
+---
+
+## Usage
+
+### Adding Folders
+
+1. Click the **Secondary Explorer** icon in the sidebar.
+2. If no folders are configured, click **Pick a Folder** or use the command palette (`Ctrl+Shift+P`) and run `Secondary Explorer: Settings`.
+3. Add local folder paths to display in the secondary explorer.
+
+### File & Folder Operations
+
+- **New File/Folder**: Use the toolbar or context menu to create entries.
+- **Rename/Delete**: Right-click or use the toolbar for quick actions.
+- **Open File**: Double-click or use the context menu to open files.
+
+### Keyboard Shortcuts
+
+- `Delete`: Remove selected file or folder (when focused in Secondary Explorer).
+
+---
+
+## Configuration
+
+You can configure folders to display via VS Code settings:
+
+```jsonc
+// settings.json
+"secondaryExplorer.folders": [
+	"C:/path/to/folder1",
+	"C:/path/to/folder2"
+]
+```
+
+- **Workspace-level configuration recommended.**
+
+---
+
+## Troubleshooting
+
+> [!IMPORTANT]
+> If the Secondary Explorer view does not appear, reload the VS Code window or check your folder configuration in settings.
+
+- Ensure folder paths are valid and accessible.
+- For issues, check the [Issues](https://github.com/R35007/secondary-explorer-vscode-extension/issues) page on GitHub.
+
+---
+
+
+## Acknowledgements
+
+Built by [Sivaraman](mailto:sendmsg2siva@gmail.com) — MIT License.
+
+---
+
+> [!TIP]
+> For more details, see the [CHANGELOG.md](CHANGELOG.md) and [LICENSE.md](LICENSE.md) files.
