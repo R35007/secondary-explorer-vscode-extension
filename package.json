@@ -2,7 +2,7 @@
   "name": "secondary-explorer",
   "displayName": "Secondary Explorer",
   "description": "Adds a secondary explorer view to manage files and folders—create, view, rename, and delete—outside the default workspace explorer.",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "icon": "images/logo.png",
   "publisher": "Thinker",
   "license": "MIT",
@@ -19,6 +19,8 @@
     "explorer",
     "file",
     "folder",
+    "notes",
+    "side-notes",
     "file-system",
     "file-management",
     "file-explorer",
@@ -56,7 +58,7 @@
       }
     },
     "views": {
-      "explorer": [
+      "secondarySideBar": [
         {
           "id": "secondaryExplorerView",
           "name": "Secondary Explorer",

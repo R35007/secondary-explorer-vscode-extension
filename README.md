@@ -1,13 +1,7 @@
-
-
-<table>
-	<tr>
-		<td><img src="images/logo.png" alt="Secondary Explorer Logo" width="64" /></td>
-		<td>
-            <h1>Secondary Explorer</h1>
-        </td>
-	</tr>
-</table>
+<h1>
+<img src="images/logo.png" alt="Secondary Explorer Logo" width="32" /> 
+<span>Secondary Explorer</span>
+</h1>
 
 > Adds a secondary explorer view to manage files and folders—create, view, rename, and delete—outside the default workspace explorer.
 
@@ -16,7 +10,6 @@
 <a href="https://buymeacoffee.com/r35007" target="_blank">
 	<img src="https://r35007.github.io/Siva_Profile/images//buymeacoffee.png" alt="Buy Me a Coffee" height="50" />
 </a>
-
 
 ## Preview
 
@@ -28,7 +21,12 @@
 
 - 📁 **Secondary Explorer View**: Manage files and folders in a dedicated sidebar, separate from the default workspace explorer.
 - 🗂️ **Multi-Folder Support**: Configure multiple local folders to display and organize.
-- 📝 **File & Folder Operations**: Create, view, rename, and delete files/folders directly from the secondary explorer.
+
+- 📝 **File & Folder Operations**: Create, view, rename, delete, cut, copy, and paste files/folders directly from the secondary explorer.
+- ✂️ **Cut, Copy, Paste**: Move or duplicate files/folders with context menu or keyboard shortcuts.
+- 🗂️ **Reveal & Copy Path**: Reveal files/folders in File Explorer, copy absolute or relative paths.
+- 🪟 **Open Folder in New Window**: Open any folder in a new VS Code window directly from the explorer.
+- 🖉 **Improved Rename**: Renaming a folder updates open editors to the new path automatically.
 - 🔄 **Quick Actions**: Refresh, open settings, and perform file operations with context menus and keybindings.
 
 ---
@@ -58,12 +56,20 @@ The extension activates automatically on startup and adds a new "Secondary Explo
 ### File & Folder Operations
 
 - **New File/Folder**: Use the toolbar or context menu to create entries.
-- **Rename/Delete**: Right-click or use the toolbar for quick actions.
+- **Rename/Delete**: Right-click or use the toolbar for quick actions. Renaming a folder updates open editors to the new path.
+- **Cut/Copy/Paste**: Use context menu or keyboard shortcuts to move or duplicate files/folders.
+- **Reveal in File Explorer**: Right-click to reveal any file/folder in your OS file explorer.
+- **Copy Path/Relative Path**: Right-click to copy absolute or relative path to clipboard.
+- **Open Folder in New Window**: Right-click any folder to open it in a new VS Code window.
 - **Open File**: Double-click or use the context menu to open files.
 
 ### Keyboard Shortcuts
 
 - `Delete`: Remove selected file or folder (when focused in Secondary Explorer).
+- `Ctrl+X`: Cut selected file or folder
+- `Ctrl+C`: Copy selected file or folder
+- `Ctrl+V`: Paste into selected folder
+- `F2`: Rename selected file or folder
 
 ---
 
@@ -92,7 +98,6 @@ You can configure folders to display via VS Code settings:
 - For issues, check the [Issues](https://github.com/R35007/secondary-explorer-vscode-extension/issues) page on GitHub.
 
 ---
-
 
 ## Acknowledgements
 
