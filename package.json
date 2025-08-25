@@ -150,46 +150,6 @@
           "command": "secondary-explorer.deleteEntry",
           "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
           "group": "navigation@2"
-        },
-        {
-          "command": "vscode.rename",
-          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
-          "group": "navigation@3"
-        },
-        {
-          "command": "vscode.deleteFile",
-          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
-          "group": "navigation@4"
-        },
-        {
-          "command": "vscode.cutFile",
-          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
-          "group": "navigation@5"
-        },
-        {
-          "command": "vscode.copyFile",
-          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
-          "group": "navigation@6"
-        },
-        {
-          "command": "vscode.paste",
-          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
-          "group": "navigation@7"
-        },
-        {
-          "command": "vscode.revealFileInOS",
-          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
-          "group": "navigation@8"
-        },
-        {
-          "command": "vscode.copyFilePath",
-          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
-          "group": "navigation@9"
-        },
-        {
-          "command": "vscode.copyRelativeFilePath",
-          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
-          "group": "navigation@10"
         }
       ],
       "view/title": [
