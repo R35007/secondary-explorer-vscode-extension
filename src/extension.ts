@@ -150,6 +150,121 @@ class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem> {
 }
 
 export function activate(context: vscode.ExtensionContext) {
+	// Clipboard state for cut/copy/paste
+	let clipboard: { type: 'cut' | 'copy'; items: FSItem[] } | null = null;
+
+	// Cut command
+	context.subscriptions.push(vscode.commands.registerCommand('secondary-explorer.cutEntry', async (item?: FSItem) => {
+		const sel = getSelectedItem(item);
+		if (!sel) { return; }
+		clipboard = { type: 'cut', items: [sel] };
+		vscode.window.setStatusBarMessage(`Cut: ${sel.label}`, 1500);
+	}));
+
+	// Copy command
+	context.subscriptions.push(vscode.commands.registerCommand('secondary-explorer.copyEntry', async (item?: FSItem) => {
+		const sel = getSelectedItem(item);
+		if (!sel) { return; }
+		clipboard = { type: 'copy', items: [sel] };
+		vscode.window.setStatusBarMessage(`Copied: ${sel.label}`, 1500);
+	}));
+
+	// Paste command
+	context.subscriptions.push(vscode.commands.registerCommand('secondary-explorer.pasteEntry', async (target?: FSItem) => {
+		if (!clipboard || clipboard.items.length === 0) {
+			vscode.window.setStatusBarMessage('Clipboard is empty', 1500);
+			return;
+		}
+		const dest = getSelectedItem(target);
+		if (!dest) { return; }
+		let destPath = dest.fullPath;
+		if (dest.type === 'file') {
+			destPath = path.dirname(dest.fullPath);
+		}
+		for (const item of clipboard.items) {
+			const baseName = path.basename(item.fullPath);
+			const newPath = path.join(destPath, baseName);
+			try {
+				if (clipboard.type === 'copy') {
+					// Copy file/folder
+					await copyRecursive(item.fullPath, newPath);
+				} else if (clipboard.type === 'cut') {
+					await fs.promises.rename(item.fullPath, newPath);
+				}
+			} catch (e) {
+				vscode.window.showErrorMessage(`Paste failed: ${String(e)}`);
+			}
+		}
+		clipboard = null;
+		provider.refresh();
+	}));
+
+	// Helper for recursive copy
+	async function copyRecursive(src: string, dest: string) {
+		const stat = await fs.promises.stat(src);
+		if (stat.isDirectory()) {
+			await fs.promises.mkdir(dest, { recursive: true });
+			const entries = await fs.promises.readdir(src);
+			for (const entry of entries) {
+				await copyRecursive(path.join(src, entry), path.join(dest, entry));
+			}
+		} else {
+			await fs.promises.copyFile(src, dest);
+		}
+	}
+
+	// Reveal in File Explorer
+	context.subscriptions.push(vscode.commands.registerCommand('secondary-explorer.revealInFileExplorer', async (item?: FSItem) => {
+		const sel = getSelectedItem(item);
+		if (!sel) { return; }
+		await vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(sel.fullPath));
+	}));
+
+	// Copy Path
+	context.subscriptions.push(vscode.commands.registerCommand('secondary-explorer.copyPath', async (item?: FSItem) => {
+		const sel = getSelectedItem(item);
+		if (!sel) { return; }
+		await vscode.env.clipboard.writeText(sel.fullPath);
+		vscode.window.setStatusBarMessage('Path copied to clipboard', 1500);
+	}));
+
+	// Copy Relative Path
+	context.subscriptions.push(vscode.commands.registerCommand('secondary-explorer.copyRelativePath', async (item?: FSItem) => {
+		const sel = getSelectedItem(item);
+		if (!sel) { return; }
+		let relPath = sel.fullPath;
+		// Try workspace folder first
+		const workspaceFolders = vscode.workspace.workspaceFolders;
+		let found = false;
+		if (workspaceFolders && workspaceFolders.length > 0) {
+			for (const folder of workspaceFolders) {
+				const folderPath = folder.uri.fsPath;
+				if (sel.fullPath.startsWith(folderPath + path.sep) || sel.fullPath === folderPath) {
+					relPath = path.relative(folderPath, sel.fullPath);
+					found = true;
+					break;
+				}
+			}
+		}
+		// If not found, use secondary explorer root
+		if (!found) {
+			// Use the deepest matching root
+			const roots = provider['folderRoots'] || [];
+			let bestRoot = '';
+			for (const root of roots) {
+				if (sel.fullPath.startsWith(root + path.sep) || sel.fullPath === root) {
+					if (root.length > bestRoot.length) {
+						bestRoot = root;
+					}
+				}
+			}
+			if (bestRoot) {
+				relPath = path.relative(bestRoot, sel.fullPath);
+			}
+		}
+		await vscode.env.clipboard.writeText(relPath);
+		vscode.window.setStatusBarMessage('Relative path copied to clipboard', 1500);
+	}));
 	// Command to pick a folder and set it in settings
 	context.subscriptions.push(vscode.commands.registerCommand('secondary-explorer.pickFolder', async () => {
 		const folders = await vscode.window.showOpenDialog({
@@ -211,13 +326,19 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('secondary-explorer.openFile', async (item: FSItem) => {
-		const sel = getSelectedItem(item);
-		if (!sel || sel.type !== 'file') { return; }
+	// Always get selection if no argument
+		let sel: FSItem | undefined = item;
+		if (!sel) {
+			sel = getSelectedItem();
+		}
+		if (!sel || sel.type !== 'file') {
+			return;
+		}
 		const uri = vscode.Uri.file(sel.fullPath);
-		// Use the vscode.open command so editor associations are respected and keep focus on the tree for Delete key.
 		await vscode.commands.executeCommand('vscode.open', uri, { preview: true, preserveFocus: true });
-		// Ensure the Secondary Explorer retains focus so the Delete keybinding applies
-		try { await treeView.reveal(sel, { select: true, focus: true }); } catch {}
+		try {
+			await treeView.reveal(sel, { select: true, focus: true });
+		} catch {}
 	}));
 
 	// Collapse all nodes in Secondary Explorer
@@ -355,20 +476,47 @@ export function activate(context: vscode.ExtensionContext) {
 		try {
 			await fs.promises.rename(sel.fullPath, targetPath);
 			provider.refresh();
+			if (sel.type === 'file') {
+				const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(targetPath));
+				await vscode.window.showTextDocument(doc);
+			} else if (sel.type === 'folder') {
+				// Reopen any open files from the renamed folder at their new path
+				const openEditors = vscode.window.visibleTextEditors;
+				for (const editor of openEditors) {
+					const docUri = editor.document.uri;
+					if (docUri.scheme === 'file' && docUri.fsPath.startsWith(sel.fullPath + path.sep)) {
+						// Compute new path
+						const rel = path.relative(sel.fullPath, docUri.fsPath);
+						const newFilePath = path.join(targetPath, rel);
+						// Check if file exists at new path
+						try {
+							await fs.promises.access(newFilePath);
+							const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(newFilePath));
+							await vscode.window.showTextDocument(doc, editor.viewColumn);
+						} catch {}
+					}
+				}
+			}
 		} catch (e) {
 			vscode.window.showErrorMessage('Failed to rename: ' + String(e));
 		}
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('secondary-explorer.openFolderInNewWindow', async () => {
+		let folderPath: string | undefined;
 		const sel = treeView.selection && treeView.selection.length > 0 ? treeView.selection[0] : undefined;
-		if (!sel) {
-			vscode.window.showInformationMessage('Please select a file or folder to open its folder in a new window.');
-			return;
-		}
-		let folderPath = sel.fullPath;
-		if (sel.type === 'file') {
-			folderPath = path.dirname(sel.fullPath);
+		if (sel) {
+			folderPath = sel.type === 'file' ? path.dirname(sel.fullPath) : sel.fullPath;
+		} else {
+			// No selection: check if only one folder is configured
+			const cfg = vscode.workspace.getConfiguration();
+			const folders = cfg.get<string[]>('secondaryExplorer.folders') || [];
+			if (folders.length === 1) {
+				folderPath = folders[0];
+			} else {
+				vscode.window.showInformationMessage('Please select a file or folder to open its folder in a new window.');
+				return;
+			}
 		}
 		await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(folderPath), { forceNewWindow: true });
 	}));

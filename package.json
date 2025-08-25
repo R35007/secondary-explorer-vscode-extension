@@ -106,6 +106,36 @@
         "command": "secondary-explorer.openFolderInNewWindow",
         "title": "Open Folder in New Window",
         "icon": "$(window)"
+      },
+      {
+        "command": "secondary-explorer.cutEntry",
+        "title": "Cut",
+        "icon": "$(cut)"
+      },
+      {
+        "command": "secondary-explorer.copyEntry",
+        "title": "Copy",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "secondary-explorer.pasteEntry",
+        "title": "Paste",
+        "icon": "$(paste)"
+      },
+      {
+        "command": "secondary-explorer.revealInFileExplorer",
+        "title": "Reveal in File Explorer",
+        "icon": "$(file-directory)"
+      },
+      {
+        "command": "secondary-explorer.copyPath",
+        "title": "Copy Path",
+        "icon": "$(clippy)"
+      },
+      {
+        "command": "secondary-explorer.copyRelativePath",
+        "title": "Copy Relative Path",
+        "icon": "$(clippy)"
       }
     ],
     "menus": {
@@ -133,6 +163,34 @@
         {
           "command": "secondary-explorer.openFile",
           "when": "false"
+        },
+        {
+          "command": "secondary-explorer.openFolderInNewWindow",
+          "when": "false"
+        },
+        {
+          "command": "secondary-explorer.cutEntry",
+          "when": "false"
+        },
+        {
+          "command": "secondary-explorer.copyEntry",
+          "when": "false"
+        },
+        {
+          "command": "secondary-explorer.pasteEntry",
+          "when": "false"
+        },
+        {
+          "command": "secondary-explorer.revealInFileExplorer",
+          "when": "false"
+        },
+        {
+          "command": "secondary-explorer.copyPath",
+          "when": "false"
+        },
+        {
+          "command": "secondary-explorer.copyRelativePath",
+          "when": "false"
         }
       ],
       "view/item/context": [
@@ -150,6 +208,56 @@
           "command": "secondary-explorer.deleteEntry",
           "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
           "group": "navigation@2"
+        },
+        {
+          "command": "secondary-explorer.cutEntry",
+          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
+          "group": "navigation@3"
+        },
+        {
+          "command": "secondary-explorer.copyEntry",
+          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
+          "group": "navigation@4"
+        },
+        {
+          "command": "secondary-explorer.pasteEntry",
+          "when": "view == secondaryExplorerView",
+          "group": "navigation@5"
+        },
+        {
+          "command": "secondary-explorer.revealInFileExplorer",
+          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
+          "group": "navigation@6"
+        },
+        {
+          "command": "secondary-explorer.copyPath",
+          "when": "view == secondaryExplorerView",
+          "group": "navigation@7"
+        },
+        {
+          "command": "secondary-explorer.copyRelativePath",
+          "when": "view == secondaryExplorerView",
+          "group": "navigation@8"
+        },
+        {
+          "command": "secondary-explorer.createEntry",
+          "when": "view == secondaryExplorerView && !viewItem",
+          "group": "navigation@1"
+        },
+        {
+          "command": "secondary-explorer.refresh",
+          "when": "view == secondaryExplorerView && !viewItem",
+          "group": "navigation@2"
+        },
+        {
+          "command": "secondary-explorer.openSettings",
+          "when": "view == secondaryExplorerView && !viewItem",
+          "group": "navigation@3"
+        },
+        {
+          "command": "secondary-explorer.pasteEntry",
+          "when": "view == secondaryExplorerView && !viewItem",
+          "group": "navigation@4"
         }
       ],
       "view/title": [
@@ -190,6 +298,26 @@
         "command": "secondary-explorer.deleteEntry",
         "key": "delete",
         "when": "focusedView == secondaryExplorerView && !inputFocus"
+      },
+      {
+        "command": "secondary-explorer.cutEntry",
+        "key": "ctrl+x",
+        "when": "focusedView == secondaryExplorerView && secondaryExplorerHasSelection && !inputFocus"
+      },
+      {
+        "command": "secondary-explorer.copyEntry",
+        "key": "ctrl+c",
+        "when": "focusedView == secondaryExplorerView && secondaryExplorerHasSelection && !inputFocus"
+      },
+      {
+        "command": "secondary-explorer.pasteEntry",
+        "key": "ctrl+v",
+        "when": "focusedView == secondaryExplorerView && secondaryExplorerHasSelection && !inputFocus"
+      },
+      {
+        "command": "secondary-explorer.renameEntry",
+        "key": "f2",
+        "when": "focusedView == secondaryExplorerView && secondaryExplorerHasSelection && !inputFocus"
       }
     ]
   },
