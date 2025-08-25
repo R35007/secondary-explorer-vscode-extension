@@ -360,6 +360,18 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	}));
 
+	context.subscriptions.push(vscode.commands.registerCommand('secondary-explorer.openFolderInNewWindow', async () => {
+		const sel = treeView.selection && treeView.selection.length > 0 ? treeView.selection[0] : undefined;
+		if (!sel) {
+			vscode.window.showInformationMessage('Please select a file or folder to open its folder in a new window.');
+			return;
+		}
+		let folderPath = sel.fullPath;
+		if (sel.type === 'file') {
+			folderPath = path.dirname(sel.fullPath);
+		}
+		await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(folderPath), { forceNewWindow: true });
+	}));
 }
 
 export function deactivate() {}
