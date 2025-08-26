@@ -3,7 +3,7 @@
 <span>Secondary Explorer</span>
 </h1>
 
-> Adds a secondary explorer view to manage files and folders—create, view, rename, and delete—outside the default workspace explorer.
+> Adds a secondary explorer view to manage files and folders, create, view, rename, and delete outside the default workspace explorer.
 
 ---
 
