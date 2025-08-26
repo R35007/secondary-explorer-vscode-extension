@@ -2,7 +2,7 @@
   "name": "secondary-explorer",
   "displayName": "Secondary Explorer",
   "description": "Adds a secondary explorer view to manage files and folders—create, view, rename, and delete—outside the default workspace explorer.",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "icon": "images/logo.png",
   "publisher": "Thinker",
   "license": "MIT",
@@ -54,11 +54,16 @@
             "type": "string"
           },
           "default": []
+        },
+        "secondaryExplorer.showSingleRootFolder": {
+          "type": "boolean",
+          "description": "Show the root folder in the tree when only one folder is configured. If disabled, only the children of the folder are shown. Default: false.",
+          "default": false
         }
       }
     },
     "views": {
-      "secondarySideBar": [
+      "explorer": [
         {
           "id": "secondaryExplorerView",
           "name": "Secondary Explorer",
@@ -80,6 +85,11 @@
         "icon": "$(refresh)"
       },
       {
+        "command": "secondary-explorer.pickFolder",
+        "title": "Pick a Folder",
+        "icon": "$(add)"
+      },
+      {
         "command": "secondary-explorer.openSettings",
         "title": "Settings",
         "icon": "$(gear)"
@@ -87,7 +97,7 @@
       {
         "command": "secondary-explorer.createEntry",
         "title": "New File/Folder",
-        "icon": "$(add)"
+        "icon": "$(new-file)"
       },
       {
         "command": "secondary-explorer.deleteEntry",
@@ -138,6 +148,11 @@
         "command": "secondary-explorer.copyRelativePath",
         "title": "Copy Relative Path",
         "icon": "$(clippy)"
+      },
+      {
+        "command": "secondary-explorer.removeFolder",
+        "title": "Remove Folder",
+        "icon": "$(trash)"
       }
     ],
     "menus": {
@@ -147,6 +162,10 @@
           "when": "false"
         },
         {
+          "command": "secondary-explorer.pickFolder",
+          "when": "false"
+        },
+        {
           "command": "secondary-explorer.openSettings",
           "when": "false"
         },
@@ -192,23 +211,22 @@
         },
         {
           "command": "secondary-explorer.copyRelativePath",
+          "when": "false"
+        },
+        {
+          "command": "secondary-explorer.removeFolder",
           "when": "false"
         }
       ],
       "view/item/context": [
         {
-          "command": "secondary-explorer.openFile",
-          "when": "view == secondaryExplorerView && viewItem == file",
-          "group": "navigation"
-        },
-        {
-          "command": "secondary-explorer.renameEntry",
-          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
+          "command": "secondary-explorer.removeFolder",
+          "when": "view == secondaryExplorerView && viewItem == root",
           "group": "navigation@1"
         },
         {
-          "command": "secondary-explorer.deleteEntry",
-          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
+          "command": "secondary-explorer.openFile",
+          "when": "view == secondaryExplorerView && viewItem == file",
           "group": "navigation@2"
         },
         {
@@ -222,76 +240,71 @@
           "group": "navigation@4"
         },
         {
-          "command": "secondary-explorer.pasteEntry",
-          "when": "view == secondaryExplorerView",
-          "group": "navigation@5"
-        },
-        {
-          "command": "secondary-explorer.revealInFileExplorer",
-          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
-          "group": "navigation@6"
-        },
-        {
           "command": "secondary-explorer.copyPath",
           "when": "view == secondaryExplorerView",
-          "group": "navigation@7"
+          "group": "navigation@5"
         },
         {
           "command": "secondary-explorer.copyRelativePath",
           "when": "view == secondaryExplorerView",
-          "group": "navigation@8"
-        },
-        {
-          "command": "secondary-explorer.createEntry",
-          "when": "view == secondaryExplorerView && !viewItem",
-          "group": "navigation@1"
-        },
-        {
-          "command": "secondary-explorer.refresh",
-          "when": "view == secondaryExplorerView && !viewItem",
-          "group": "navigation@2"
-        },
-        {
-          "command": "secondary-explorer.openSettings",
-          "when": "view == secondaryExplorerView && !viewItem",
-          "group": "navigation@3"
+          "group": "navigation@6"
         },
         {
           "command": "secondary-explorer.pasteEntry",
-          "when": "view == secondaryExplorerView && !viewItem",
-          "group": "navigation@4"
+          "when": "view == secondaryExplorerView",
+          "group": "navigation@7"
+        },
+        {
+          "command": "secondary-explorer.renameEntry",
+          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
+          "group": "navigation@8"
+        },
+        {
+          "command": "secondary-explorer.deleteEntry",
+          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
+          "group": "navigation@9"
+        },
+        {
+          "command": "secondary-explorer.revealInFileExplorer",
+          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
+          "group": "navigation@10"
         }
       ],
       "view/title": [
         {
-          "command": "secondary-explorer.refresh",
-          "when": "view == secondaryExplorerView",
+          "command": "secondary-explorer.createEntry",
+          "when": "view == secondaryExplorerView && secondaryExplorerHasSelection",
           "group": "navigation@1"
         },
         {
-          "command": "secondary-explorer.openSettings",
-          "when": "view == secondaryExplorerView",
+          "command": "secondary-explorer.renameEntry",
+          "when": "view == secondaryExplorerView && secondaryExplorerHasSelection",
           "group": "navigation@2"
         },
         {
-          "command": "secondary-explorer.createEntry",
-          "when": "view == secondaryExplorerView",
+          "command": "secondary-explorer.deleteEntry",
+          "when": "view == secondaryExplorerView && secondaryExplorerHasSelection",
           "group": "navigation@3"
         },
         {
-          "command": "secondary-explorer.renameEntry",
+          "command": "secondary-explorer.pickFolder",
           "when": "view == secondaryExplorerView",
           "group": "navigation@4"
         },
         {
-          "command": "secondary-explorer.deleteEntry",
+          "command": "secondary-explorer.openFolderInNewWindow",
           "when": "view == secondaryExplorerView",
           "group": "navigation@5"
         },
         {
-          "command": "secondary-explorer.openFolderInNewWindow",
+          "command": "secondary-explorer.refresh",
           "when": "view == secondaryExplorerView",
           "group": "navigation@6"
+        },
+        {
+          "command": "secondary-explorer.openSettings",
+          "when": "view == secondaryExplorerView",
+          "group": "navigation@7"
         }
       ]
     },
@@ -332,20 +345,28 @@
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "lint": "eslint src",
+    "format": "prettier --write .",
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.100.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
+    "@types/vscode": "^1.100.0",
     "@typescript-eslint/eslint-plugin": "^8.39.0",
     "@typescript-eslint/parser": "^8.39.0",
-    "eslint": "^9.32.0",
-    "typescript": "^5.9.2",
-    "ts-loader": "^9.5.2",
-    "webpack": "^5.101.0",
-    "webpack-cli": "^6.0.1",
     "@vscode/test-cli": "^0.0.11",
-    "@vscode/test-electron": "^2.5.2"
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^9.32.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.6.2",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.9.2",
+    "webpack": "^5.101.0",
+    "webpack-cli": "^6.0.1"
+  },
+  "dependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "fs-extra": "^11.3.1"
   }
 }

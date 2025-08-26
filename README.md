@@ -20,14 +20,14 @@
 ## Features
 
 - 📁 **Secondary Explorer View**: Manage files and folders in a dedicated sidebar, separate from the default workspace explorer.
-- 🗂️ **Multi-Folder Support**: Configure multiple local folders to display and organize.
-
+- 🗂️ **Multi-Folder Support**: Configure multiple local folders to display and organize. Optionally show the root folder node when only one folder is configured.
 - 📝 **File & Folder Operations**: Create, view, rename, delete, cut, copy, and paste files/folders directly from the secondary explorer.
 - ✂️ **Cut, Copy, Paste**: Move or duplicate files/folders with context menu or keyboard shortcuts.
 - 🗂️ **Reveal & Copy Path**: Reveal files/folders in File Explorer, copy absolute or relative paths.
 - 🪟 **Open Folder in New Window**: Open any folder in a new VS Code window directly from the explorer.
 - 🖉 **Improved Rename**: Renaming a folder updates open editors to the new path automatically.
 - 🔄 **Quick Actions**: Refresh, open settings, and perform file operations with context menus and keybindings.
+- 🗑️ **Remove Folder**: Remove a configured root folder from the secondary explorer (does not delete from disk).
 
 ---
 
@@ -80,9 +80,10 @@ You can configure folders to display via VS Code settings:
 ```jsonc
 // settings.json
 "secondaryExplorer.folders": [
-	"C:/path/to/folder1",
-	"C:/path/to/folder2"
-]
+  "C:/path/to/folder1",
+  "C:/path/to/folder2"
+],
+"secondaryExplorer.showSingleRootFolder": false // Optional: show root folder node when only one folder is configured
 ```
 
 - **Workspace-level configuration recommended.**
@@ -95,6 +96,7 @@ You can configure folders to display via VS Code settings:
 > If the Secondary Explorer view does not appear, reload the VS Code window or check your folder configuration in settings.
 
 - Ensure folder paths are valid and accessible.
+- If you have only one folder configured, you can choose to show the root folder node or just its children via the `secondaryExplorer.showSingleRootFolder` setting.
 - For issues, check the [Issues](https://github.com/R35007/secondary-explorer-vscode-extension/issues) page on GitHub.
 
 ---
