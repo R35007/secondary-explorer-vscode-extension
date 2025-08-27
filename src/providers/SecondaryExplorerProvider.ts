@@ -4,32 +4,42 @@ import * as vscode from 'vscode';
 import { FSItem } from '../models/FSItem';
 
 export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem> {
-  private _onDidChangeTreeData: vscode.EventEmitter<FSItem | undefined | void> =
-    new vscode.EventEmitter<FSItem | undefined | void>();
-  readonly onDidChangeTreeData: vscode.Event<FSItem | undefined | void> =
-    this._onDidChangeTreeData.event;
+  public getRootPaths(): string[] {
+    return this.folderRoots;
+  }
+  private _onDidChangeTreeData: vscode.EventEmitter<FSItem | undefined | void> = new vscode.EventEmitter<FSItem | undefined | void>();
+  readonly onDidChangeTreeData: vscode.Event<FSItem | undefined | void> = this._onDidChangeTreeData.event;
 
   private folderRoots: string[] = [];
   private useThemeIcons = true;
 
   constructor(private context: vscode.ExtensionContext) {
-    this.loadFolders();
+    this.loadPaths();
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (
-        e.affectsConfiguration('secondaryExplorer.folders') ||
+        e.affectsConfiguration('secondaryExplorer.paths') ||
         e.affectsConfiguration('workbench.iconTheme') ||
         e.affectsConfiguration('workbench.tree.renderIcons')
       ) {
-        this.loadFolders();
+        this.loadPaths();
         this.refresh();
       }
     });
   }
 
-  loadFolders() {
+  loadPaths() {
     const cfg = vscode.workspace.getConfiguration();
-    const folders = cfg.get<string[]>('secondaryExplorer.folders') || [];
-    this.folderRoots = folders.filter((p) => typeof p === 'string' && path.isAbsolute(p));
+    const paths = cfg.get<string[]>('secondaryExplorer.paths') || [];
+    // Only keep absolute paths that exist
+    this.folderRoots = paths
+      .filter((p) => typeof p === 'string' && path.isAbsolute(p))
+      .filter((p) => {
+        try {
+          return fs.existsSync(p);
+        } catch {
+          return false;
+        }
+      });
 
     const workbenchCfg = vscode.workspace.getConfiguration('workbench');
     const iconTheme = workbenchCfg.get<string | null>('iconTheme');
@@ -46,8 +56,8 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
   }
 
   private compareItems = (a: FSItem, b: FSItem) => {
-    const aIsDir = a.type === 'folder' || a.type === 'root';
-    const bIsDir = b.type === 'folder' || b.type === 'root';
+    const aIsDir = a.type === 'folder';
+    const bIsDir = b.type === 'folder';
     if (aIsDir !== bIsDir) return aIsDir ? -1 : 1;
     const an = String(a.label).toLocaleLowerCase();
     const bn = String(b.label).toLocaleLowerCase();
@@ -56,67 +66,50 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
     return 0;
   };
 
-  async getChildren(element?: FSItem): Promise<FSItem[]> {
-    if (!element) {
-      if (this.folderRoots.length === 1) {
-        const cfg = vscode.workspace.getConfiguration();
-        const showRoot = cfg.get<boolean>('secondaryExplorer.showSingleRootFolder', false);
-        const base = this.folderRoots[0];
+  getChildrenItems = async (base: string) => {
+    const names = await fs.readdir(base);
+    const items = await Promise.all(
+      names.map(async (n) => {
+        const p = path.join(base, n);
         try {
-          const stat = await fs.stat(base);
-          if (stat.isDirectory()) {
-            if (showRoot) {
-              // Show the root folder as a node
-              return [new FSItem(path.basename(base) || base, base, 'root', this.useThemeIcons)];
-            } else {
-              // Show only the children of the root folder
-              const names = await fs.readdir(base);
-              const items = await Promise.all(
-                names.map(async (n) => {
-                  const p = path.join(base, n);
-                  try {
-                    const s = await fs.stat(p);
-                    return new FSItem(
-                      n,
-                      p,
-                      s.isDirectory() ? 'folder' : 'file',
-                      this.useThemeIcons
-                    );
-                  } catch (e) {
-                    return null;
-                  }
-                })
-              );
-              return (items.filter(Boolean) as FSItem[]).sort(this.compareItems);
-            }
-          }
-          return [new FSItem(path.basename(base) || base, base, 'file', this.useThemeIcons)];
+          const s = await fs.stat(p);
+          return new FSItem(n, p, s.isFile(), false); // isRoot = false
         } catch {
-          return [];
+          return null;
         }
+      }),
+    );
+    return (items.filter(Boolean) as FSItem[]).sort(this.compareItems);
+  };
+
+  renderSingleRoot = async () => {
+    const base = this.folderRoots[0];
+    const stat = await fs.stat(base);
+    if (stat.isDirectory()) return await this.getChildrenItems(base); // Show only the children of the root folder
+    // Only one file, show just that file
+    return [new FSItem(path.basename(base) || base, base, true, true)]; // isFile = true, isRoot = true
+  };
+
+  renderNewItems = async () => {
+    if (this.folderRoots.length === 1) return await this.renderSingleRoot();
+    // Multiple valid paths: show each as root (file or folder)
+    const items = this.folderRoots.map((f) => {
+      try {
+        const stat = fs.statSync(f);
+        return new FSItem(path.basename(f) || f, f, stat.isFile(), true); // isRoot = true
+      } catch {
+        return null;
       }
-      return this.folderRoots
-        .map((f) => new FSItem(path.basename(f) || f, f, 'root', this.useThemeIcons))
-        .sort(this.compareItems);
-    }
-    const full = element.fullPath;
+    });
+    return items.filter((i): i is FSItem => i !== null).sort(this.compareItems);
+  };
+
+  async getChildren(element?: FSItem): Promise<FSItem[]> {
     try {
+      if (!element) return await this.renderNewItems();
+      const full = element.fullPath;
       const stat = await fs.stat(full);
-      if (stat.isDirectory()) {
-        const names = await fs.readdir(full);
-        const items = await Promise.all(
-          names.map(async (n) => {
-            const p = path.join(full, n);
-            try {
-              const s = await fs.stat(p);
-              return new FSItem(n, p, s.isDirectory() ? 'folder' : 'file', this.useThemeIcons);
-            } catch (e) {
-              return null;
-            }
-          })
-        );
-        return (items.filter(Boolean) as FSItem[]).sort(this.compareItems);
-      }
+      if (stat.isDirectory()) return await this.getChildrenItems(full);
       return [];
     } catch (e) {
       return [];

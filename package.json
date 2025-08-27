@@ -47,18 +47,13 @@
       "type": "object",
       "title": "Secondary Explorer",
       "properties": {
-        "secondaryExplorer.folders": {
+        "secondaryExplorer.paths": {
           "type": "array",
-          "description": "List of local folder paths to show in the Secondary Explorer (workspace-level recommended).",
+          "description": "List of local file or folder paths to show in the Secondary Explorer (workspace-level recommended). Only existing files and folders will be shown.",
           "items": {
             "type": "string"
           },
           "default": []
-        },
-        "secondaryExplorer.showSingleRootFolder": {
-          "type": "boolean",
-          "description": "Show the root folder in the tree when only one folder is configured. If disabled, only the children of the folder are shown. Default: false.",
-          "default": false
         }
       }
     },
@@ -74,8 +69,8 @@
     "viewsWelcome": [
       {
         "view": "secondaryExplorerView",
-        "contents": "No folders configured.\n[Pick a Folder](command:secondary-explorer.pickFolder)",
-        "when": "!secondaryExplorer.folders || secondaryExplorer.folders.length == 0"
+        "contents": "No paths configured.\n[Add Folder to Explorer](command:secondary-explorer.pickPath)",
+        "when": "!secondaryExplorer.paths || secondaryExplorer.paths.length == 0"
       }
     ],
     "commands": [
@@ -85,9 +80,9 @@
         "icon": "$(refresh)"
       },
       {
-        "command": "secondary-explorer.pickFolder",
-        "title": "Pick a Folder",
-        "icon": "$(add)"
+        "command": "secondary-explorer.pickPath",
+        "title": "Add Folder to Explorer",
+        "icon": "$(new-folder)"
       },
       {
         "command": "secondary-explorer.openSettings",
@@ -96,7 +91,7 @@
       },
       {
         "command": "secondary-explorer.createEntry",
-        "title": "New File/Folder",
+        "title": "Create New File/Folder",
         "icon": "$(new-file)"
       },
       {
@@ -116,8 +111,8 @@
       },
       {
         "command": "secondary-explorer.openFolderInNewWindow",
-        "title": "Open Folder in New Window",
-        "icon": "$(window)"
+        "title": "Open in New Window",
+        "icon": "$(link-external)"
       },
       {
         "command": "secondary-explorer.cutEntry",
@@ -150,9 +145,19 @@
         "icon": "$(clippy)"
       },
       {
-        "command": "secondary-explorer.removeFolder",
-        "title": "Remove Folder",
+        "command": "secondary-explorer.removePath",
+        "title": "Remove From Explorer",
         "icon": "$(trash)"
+      },
+      {
+        "command": "secondary-explorer.openInTerminal",
+        "title": "Open in Integrated Terminal",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "secondary-explorer.addToSecondaryExplorer",
+        "title": "Add to Secondary Explorer",
+        "icon": "$(add)"
       }
     ],
     "menus": {
@@ -162,7 +167,7 @@
           "when": "false"
         },
         {
-          "command": "secondary-explorer.pickFolder",
+          "command": "secondary-explorer.pickPath",
           "when": "false"
         },
         {
@@ -214,19 +219,30 @@
           "when": "false"
         },
         {
-          "command": "secondary-explorer.removeFolder",
+          "command": "secondary-explorer.removePath",
           "when": "false"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "secondary-explorer.addToSecondaryExplorer",
+          "group": "navigation@1"
         }
       ],
       "view/item/context": [
         {
-          "command": "secondary-explorer.removeFolder",
+          "command": "secondary-explorer.removePath",
           "when": "view == secondaryExplorerView && viewItem == root",
           "group": "navigation@1"
         },
         {
           "command": "secondary-explorer.openFile",
           "when": "view == secondaryExplorerView && viewItem == file",
+          "group": "navigation@2"
+        },
+        {
+          "command": "secondary-explorer.openInTerminal",
+          "when": "view == secondaryExplorerView",
           "group": "navigation@2"
         },
         {
@@ -251,7 +267,7 @@
         },
         {
           "command": "secondary-explorer.pasteEntry",
-          "when": "view == secondaryExplorerView",
+          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
           "group": "navigation@7"
         },
         {
@@ -266,43 +282,33 @@
         },
         {
           "command": "secondary-explorer.revealInFileExplorer",
-          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
+          "when": "view == secondaryExplorerView",
           "group": "navigation@10"
         }
       ],
       "view/title": [
         {
           "command": "secondary-explorer.createEntry",
-          "when": "view == secondaryExplorerView && secondaryExplorerHasSelection",
+          "when": "view == secondaryExplorerView && (secondaryExplorerSelectedType == 'file' || secondaryExplorerSelectedType == 'folder') && !(secondaryExplorerSelectedType == 'file' && secondaryExplorerSelectedIsRoot)",
           "group": "navigation@1"
         },
         {
-          "command": "secondary-explorer.renameEntry",
-          "when": "view == secondaryExplorerView && secondaryExplorerHasSelection",
-          "group": "navigation@2"
-        },
-        {
-          "command": "secondary-explorer.deleteEntry",
-          "when": "view == secondaryExplorerView && secondaryExplorerHasSelection",
-          "group": "navigation@3"
-        },
-        {
-          "command": "secondary-explorer.pickFolder",
+          "command": "secondary-explorer.pickPath",
           "when": "view == secondaryExplorerView",
           "group": "navigation@4"
         },
         {
           "command": "secondary-explorer.openFolderInNewWindow",
-          "when": "view == secondaryExplorerView",
+          "when": "view == secondaryExplorerView && (secondaryExplorerSelectedType == 'file' || secondaryExplorerSelectedType == 'folder')",
           "group": "navigation@5"
         },
         {
-          "command": "secondary-explorer.refresh",
+          "command": "secondary-explorer.openSettings",
           "when": "view == secondaryExplorerView",
           "group": "navigation@6"
         },
         {
-          "command": "secondary-explorer.openSettings",
+          "command": "secondary-explorer.refresh",
           "when": "view == secondaryExplorerView",
           "group": "navigation@7"
         }
@@ -312,7 +318,7 @@
       {
         "command": "secondary-explorer.deleteEntry",
         "key": "delete",
-        "when": "focusedView == secondaryExplorerView && !inputFocus"
+        "when": "focusedView == secondaryExplorerView && secondaryExplorerHasSelection && !inputFocus"
       },
       {
         "command": "secondary-explorer.cutEntry",
@@ -353,7 +359,6 @@
     "@types/node": "22.x",
     "@types/vscode": "^1.100.0",
     "@typescript-eslint/eslint-plugin": "^8.39.0",
-    "@typescript-eslint/parser": "^8.39.0",
     "@vscode/test-cli": "^0.0.11",
     "@vscode/test-electron": "^2.5.2",
     "eslint": "^9.32.0",
