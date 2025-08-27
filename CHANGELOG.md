@@ -1,9 +1,22 @@
+
 # Change Log
 
 All notable changes to the "secondary-explorer" extension will be documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+
+## [4.0.0] - 2025-08-27
+
+- Major refactor and feature update
+- Changed configuration property to `secondaryExplorer.paths` (replaces `secondaryExplorer.folders`)
+- Added new commands: Cut, Copy, Paste, Reveal in File Explorer, Copy Path, Copy Relative Path, Remove From Explorer, Open in Integrated Terminal, Add to Secondary Explorer
+- Improved context key logic for menu and keybinding visibility
+- Updated view/item/title context menus for all commands
+- Improved keyboard shortcuts and accessibility for explorer actions
+- Updated icon and view configuration in package.json
+- Updated README.md and documentation for new configuration and features
+- Various bug fixes and internal improvements
 
 ## [3.0.0] - 2025-08-26
 

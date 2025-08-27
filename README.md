@@ -1,15 +1,12 @@
-<h1>
-<img src="images/logo.png" alt="Secondary Explorer Logo" width="32" /> 
-<span>Secondary Explorer</span>
-</h1>
+## <img src="images/logo.png" alt="Secondary Explorer Logo" width="32" /> Secondary Explorer
 
-> Adds a secondary explorer view to manage files and folders, create, view, rename, and delete outside the default workspace explorer.
+
+> Adds a secondary explorer view to manage files and folders, create, view, rename, delete, cut, copy, paste, and more—outside the default workspace explorer.
 
 ---
 
-<a href="https://buymeacoffee.com/r35007" target="_blank">
-	<img src="https://r35007.github.io/Siva_Profile/images//buymeacoffee.png" alt="Buy Me a Coffee" height="50" />
-</a>
+
+[![Buy Me a Coffee](https://r35007.github.io/Siva_Profile/images//buymeacoffee.png)](https://buymeacoffee.com/r35007)
 
 ## Preview
 
@@ -17,19 +14,22 @@
 
 ---
 
+
 ## Features
 
-- 📁 **Secondary Explorer View**: Manage files and folders in a dedicated sidebar, separate from the default workspace explorer.
-- 🗂️ **Multi-Folder Support**: Configure multiple local folders to display and organize. Optionally show the root folder node when only one folder is configured.
-- 📝 **File & Folder Operations**: Create, view, rename, delete, cut, copy, and paste files/folders directly from the secondary explorer.
-- ✂️ **Cut, Copy, Paste**: Move or duplicate files/folders with context menu or keyboard shortcuts.
-- 🗂️ **Reveal & Copy Path**: Reveal files/folders in File Explorer, copy absolute or relative paths.
-- 🪟 **Open Folder in New Window**: Open any folder in a new VS Code window directly from the explorer.
-- 🖉 **Improved Rename**: Renaming a folder updates open editors to the new path automatically.
-- 🔄 **Quick Actions**: Refresh, open settings, and perform file operations with context menus and keybindings.
-- 🗑️ **Remove Folder**: Remove a configured root folder from the secondary explorer (does not delete from disk).
+- 📁 **Secondary Explorer View**: Manage files and folders in a dedicated sidebar.
+- 🗂️ **Multi-Folder Support**: Display and organize multiple local folders.
+- 📝 **File & Folder Operations**: Create, view, rename, delete files/folders.
+- ✂️ **Cut, Copy, Paste**: Move or duplicate files/folders.
+- 🗂️ **Multi-Selection Support**: Supports Multi file or folder selection for Cut, Copy, Paste and Delete operations. 
+- 🗂️ **Reveal & Copy Path**: Reveal in File Explorer, copy absolute/relative paths.
+- 🪟 **Open Folder in New Window**: Open any folder in a new VS Code window.
+- 🖉 **Improved Rename**: Renaming a folder updates open editors.
+- 🔄 **Quick Actions**: Refresh, open settings, and perform file operations.
+- 🗑️ **Remove Folder**: Remove a configured root folder (does not delete from disk).
 
 ---
+
 
 ## Getting Started
 
@@ -45,23 +45,25 @@ The extension activates automatically on startup and adds a new "Secondary Explo
 
 ---
 
+
 ## Usage
 
 ### Adding Folders
 
 1. Click the **Secondary Explorer** icon in the sidebar.
-2. If no folders are configured, click **Pick a Folder** or use the command palette (`Ctrl+Shift+P`) and run `Secondary Explorer: Settings`.
+2. If no folders are configured, click **Add Folder to Explorer** or use the command palette (`Ctrl+Shift+P`) and run `Secondary Explorer: Settings`.
 3. Add local folder paths to display in the secondary explorer.
 
 ### File & Folder Operations
 
-- **New File/Folder**: Use the toolbar or context menu to create entries.
-- **Rename/Delete**: Right-click or use the toolbar for quick actions. Renaming a folder updates open editors to the new path.
+- **New File/Folder**: Use the toolbar or context menu to create file or folders.
+- **Rename/Delete**: Right-click to renaming a file or folder.
 - **Cut/Copy/Paste**: Use context menu or keyboard shortcuts to move or duplicate files/folders.
 - **Reveal in File Explorer**: Right-click to reveal any file/folder in your OS file explorer.
 - **Copy Path/Relative Path**: Right-click to copy absolute or relative path to clipboard.
-- **Open Folder in New Window**: Right-click any folder to open it in a new VS Code window.
-- **Open File**: Double-click or use the context menu to open files.
+- **Open Folder in New Window**: Right-click any file or folder to open it in a new VS Code window.
+- **Open In Integrated Terminal**: Right-click any file or folder to open it in a VS Code Integrated Terminal.
+- **Open File**: Click or Enter to open files.
 
 ### Keyboard Shortcuts
 
@@ -73,31 +75,20 @@ The extension activates automatically on startup and adds a new "Secondary Explo
 
 ---
 
+
 ## Configuration
 
-You can configure folders to display via VS Code settings:
+Configure folders to display via VS Code settings:
 
 ```jsonc
 // settings.json
-"secondaryExplorer.folders": [
+"secondaryExplorer.paths": [
   "C:/path/to/folder1",
   "C:/path/to/folder2"
-],
-"secondaryExplorer.showSingleRootFolder": false // Optional: show root folder node when only one folder is configured
+]
 ```
 
 - **Workspace-level configuration recommended.**
-
----
-
-## Troubleshooting
-
-> [!IMPORTANT]
-> If the Secondary Explorer view does not appear, reload the VS Code window or check your folder configuration in settings.
-
-- Ensure folder paths are valid and accessible.
-- If you have only one folder configured, you can choose to show the root folder node or just its children via the `secondaryExplorer.showSingleRootFolder` setting.
-- For issues, check the [Issues](https://github.com/R35007/secondary-explorer-vscode-extension/issues) page on GitHub.
 
 ---
 
@@ -107,5 +98,6 @@ Built by [Sivaraman](mailto:sendmsg2siva@gmail.com) — MIT License.
 
 ---
 
-> [!TIP]
+
+> **TIP**
 > For more details, see the [CHANGELOG.md](CHANGELOG.md) and [LICENSE.md](LICENSE.md) files.
