@@ -33,3 +33,15 @@ export function isSubpath(base: string, target: string): boolean {
   const rel = path.relative(path.resolve(base), path.resolve(target));
   return !!rel && !rel.startsWith('..') && !path.isAbsolute(rel);
 }
+
+// Helps to convert template literal strings to applied values.
+export const interpolate = (object: object, format: string = '') => {
+  try {
+    const keys = Object.keys(object);
+    const values = Object.values(object);
+    return new Function(...keys, `return \`${format}\`;`)(...values);
+  } catch (error) {
+    console.log(error);
+    return format;
+  }
+};
