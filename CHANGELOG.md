@@ -5,6 +5,16 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [5.0.0] - 2025-08-30
+
+- New: List view mode with quick toggle between Tree and List (commands: View as List / View as Tree)
+- New: Path groups support include/exclude glob patterns for filtering files shown in the explorer
+- New: Variable interpolation in configuration (${workspaceFolder}, ${userHome}) for flexible path definitions
+- Improvement: Robust path normalization and validation; only existing absolute paths are rendered
+- Improvement: Dynamic view title when a single root is configured (uses configured name or folder name)
+- New: "Add to Secondary Explorer" command in default explorer/editor to quickly add paths
+- Internal: Settings refactor, fast-glob based list mode, and refined context keys/menus for view mode
+
 
 ## [4.0.0] - 2025-08-27
 
