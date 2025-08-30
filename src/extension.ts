@@ -41,6 +41,7 @@ export function activate(context: vscode.ExtensionContext) {
   vscode.commands.executeCommand('setContext', 'secondaryExplorerViewVisible', false);
   vscode.commands.executeCommand('setContext', 'secondaryExplorerSelectedIsRoot', false);
   vscode.commands.executeCommand('setContext', 'secondaryExplorerHasSelection', false);
+  vscode.commands.executeCommand('setContext', 'secondaryExplorerRootViewAsList', false);
   vscode.commands.executeCommand('setContext', 'secondaryExplorerSelectedType', '');
   context.subscriptions.push(
     treeView.onDidChangeVisibility((e) => vscode.commands.executeCommand('setContext', 'secondaryExplorerViewVisible', e.visible)),

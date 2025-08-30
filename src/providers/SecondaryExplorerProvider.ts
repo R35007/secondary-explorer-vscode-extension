@@ -1,3 +1,4 @@
+import fg from 'fast-glob';
 import * as fs from 'fs-extra';
 import micromatch from 'micromatch';
 import * as path from 'path';
@@ -12,6 +13,7 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
   readonly onDidChangeTreeData: vscode.Event<FSItem | undefined | void> = this._onDidChangeTreeData.event;
 
   private explorerPaths: NormalizedPaths[] = [];
+  private shouldViewAsList: boolean = false;
 
   constructor(private context: vscode.ExtensionContext) {
     this.loadPaths();
@@ -35,6 +37,12 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
     this._onDidChangeTreeData.fire();
   }
 
+  toggleListView(): void {
+    this.shouldViewAsList = !this.shouldViewAsList;
+    vscode.commands.executeCommand('setContext', 'secondaryExplorerRootViewAsList', this.shouldViewAsList);
+    this.refresh();
+  }
+
   getTreeItem(element: FSItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
     return element;
   }
@@ -50,7 +58,20 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
     return 0;
   };
 
+  getAllFilesInDirectory = async (dir: string, include: string[] = ['**/*'], exclude?: string[]) => {
+    const matchedFiles = await fg.glob(include, { cwd: dir, ignore: exclude, onlyFiles: true, dot: true });
+
+    return matchedFiles
+      .map((file) => path.resolve(dir, file))
+      .map((folderPath) => {
+        const label = path.basename(folderPath);
+        return new FSItem(label, folderPath, true, false); // isFile = true, isRoot = false
+      });
+  };
+
   getChildrenItems = async (base: string, include?: string[], exclude?: string[]) => {
+    if (this.shouldViewAsList) return await this.getAllFilesInDirectory(base, include, exclude);
+
     const names = await fs.readdir(base);
     const items: FSItem[] = [];
     for (const label of names) {

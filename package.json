@@ -215,6 +215,16 @@
         "command": "secondary-explorer.addToSecondaryExplorer",
         "title": "Add to Secondary Explorer",
         "icon": "$(add)"
+      },
+      {
+        "command": "secondary-explorer.viewAsList",
+        "title": "View as List",
+        "icon": "$(list-tree)"
+      },
+      {
+        "command": "secondary-explorer.viewAsTree",
+        "title": "View as Tree",
+        "icon": "$(list-unordered)"
       }
     ],
     "menus": {
@@ -278,6 +288,14 @@
         {
           "command": "secondary-explorer.removePath",
           "when": "false"
+        },
+        {
+          "command": "secondary-explorer.viewAsList",
+          "when": "false"
+        },
+        {
+          "command": "secondary-explorer.viewAsTree",
+          "when": "false"
         }
       ],
       "explorer/context": [
@@ -286,7 +304,18 @@
           "group": "navigation@1"
         }
       ],
+      "editor/title/context": [
+        {
+          "command": "secondary-explorer.addToSecondaryExplorer",
+          "group": "navigation@1"
+        }
+      ],
       "view/item/context": [
+        {
+          "command": "secondary-explorer.openFolderInNewWindow",
+          "when": "view == secondaryExplorerView && viewItem == root",
+          "group": "inline"
+        },
         {
           "command": "secondary-explorer.removePath",
           "when": "view == secondaryExplorerView && viewItem == root",
@@ -352,22 +381,22 @@
         {
           "command": "secondary-explorer.pickPath",
           "when": "view == secondaryExplorerView",
-          "group": "navigation@4"
+          "group": "navigation@2"
         },
         {
-          "command": "secondary-explorer.openFolderInNewWindow",
-          "when": "view == secondaryExplorerView && (secondaryExplorerSelectedType == 'file' || secondaryExplorerSelectedType == 'folder')",
-          "group": "navigation@5"
+          "command": "secondary-explorer.viewAsList",
+          "when": "view == secondaryExplorerView && !secondaryExplorerRootViewAsList",
+          "group": "navigation@3"
         },
         {
-          "command": "secondary-explorer.openSettings",
-          "when": "view == secondaryExplorerView",
-          "group": "navigation@6"
+          "command": "secondary-explorer.viewAsTree",
+          "when": "view == secondaryExplorerView && secondaryExplorerRootViewAsList",
+          "group": "navigation@3"
         },
         {
           "command": "secondary-explorer.refresh",
           "when": "view == secondaryExplorerView",
-          "group": "navigation@7"
+          "group": "navigation@5"
         }
       ]
     },
@@ -430,6 +459,7 @@
     "webpack-cli": "^6.0.1"
   },
   "dependencies": {
+    "fast-glob": "^3.3.3",
     "fs-extra": "^11.3.1",
     "micromatch": "^4.0.8"
   }

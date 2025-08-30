@@ -9,6 +9,19 @@ import { exists, existsAsync, sanitizeRelative, splitNameExt } from '../utils/ut
 export function registerCommands(context: vscode.ExtensionContext, provider: SecondaryExplorerProvider, treeView: vscode.TreeView<FSItem>) {
   // Add to Secondary Explorer from default explorer
   context.subscriptions.push(
+    vscode.commands.registerCommand('secondary-explorer.viewAsList', async (uriOrUris: vscode.Uri | vscode.Uri[]) => {
+      provider.toggleListView?.();
+    }),
+  );
+  // Add to Secondary Explorer from default explorer
+  context.subscriptions.push(
+    vscode.commands.registerCommand('secondary-explorer.viewAsTree', async (uriOrUris: vscode.Uri | vscode.Uri[]) => {
+      provider.toggleListView?.();
+    }),
+  );
+
+  // Add to Secondary Explorer from default explorer
+  context.subscriptions.push(
     vscode.commands.registerCommand('secondary-explorer.addToSecondaryExplorer', async (uriOrUris: vscode.Uri | vscode.Uri[]) => {
       // Support multiple selection
       const uris: vscode.Uri[] = Array.isArray(uriOrUris) ? uriOrUris : uriOrUris ? [uriOrUris] : [];
