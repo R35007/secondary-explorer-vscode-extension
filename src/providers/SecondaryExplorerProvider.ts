@@ -1,17 +1,17 @@
 import * as fs from 'fs-extra';
+import micromatch from 'micromatch';
 import * as path from 'path';
 import * as vscode from 'vscode';
+
 import { FSItem } from '../models/FSItem';
+import { NormalizedPaths, Settings } from '../utils/Settings';
+import { hasMatchingChild, safePromise } from '../utils/utils';
 
 export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem> {
-  public getRootPaths(): string[] {
-    return this.folderRoots;
-  }
   private _onDidChangeTreeData: vscode.EventEmitter<FSItem | undefined | void> = new vscode.EventEmitter<FSItem | undefined | void>();
   readonly onDidChangeTreeData: vscode.Event<FSItem | undefined | void> = this._onDidChangeTreeData.event;
 
-  private folderRoots: string[] = [];
-  private useThemeIcons = true;
+  private explorerPaths: NormalizedPaths[] = [];
 
   constructor(private context: vscode.ExtensionContext) {
     this.loadPaths();
@@ -28,23 +28,7 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
   }
 
   loadPaths() {
-    const cfg = vscode.workspace.getConfiguration();
-    const paths = cfg.get<string[]>('secondaryExplorer.paths') || [];
-    // Only keep absolute paths that exist
-    this.folderRoots = paths
-      .filter((p) => typeof p === 'string' && path.isAbsolute(p))
-      .filter((p) => {
-        try {
-          return fs.existsSync(p);
-        } catch {
-          return false;
-        }
-      });
-
-    const workbenchCfg = vscode.workspace.getConfiguration('workbench');
-    const iconTheme = workbenchCfg.get<string | null>('iconTheme');
-    const renderIcons = workbenchCfg.get<boolean>('tree.renderIcons', true);
-    this.useThemeIcons = !!iconTheme && renderIcons;
+    this.explorerPaths = Settings.paths;
   }
 
   refresh(): void {
@@ -66,42 +50,45 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
     return 0;
   };
 
-  getChildrenItems = async (base: string) => {
+  getChildrenItems = async (base: string, include?: string[], exclude?: string[]) => {
     const names = await fs.readdir(base);
-    const items = await Promise.all(
-      names.map(async (n) => {
-        const p = path.join(base, n);
-        try {
-          const s = await fs.stat(p);
-          return new FSItem(n, p, s.isFile(), false); // isRoot = false
-        } catch {
-          return null;
-        }
-      }),
-    );
-    return (items.filter(Boolean) as FSItem[]).sort(this.compareItems);
+    const items: FSItem[] = [];
+    for (const label of names) {
+      const fullPath = path.join(base, label);
+      const [pathStats, error] = await safePromise(fs.stat(fullPath));
+      if (error) continue;
+      // continue if path or file matches exclude patterns or doesn't match include patterns
+      if (exclude && exclude.length > 0 && micromatch.isMatch(fullPath, exclude)) continue;
+      if (pathStats.isFile() && include && include.length > 0 && !micromatch.isMatch(fullPath, include)) continue;
+      if (pathStats.isDirectory() && include && include.length > 0 && !(await hasMatchingChild(fullPath, include))) continue;
+
+      items.push(new FSItem(label, fullPath, pathStats.isFile(), false, include, exclude)); // isRoot = false
+    }
+    return items.sort(this.compareItems);
   };
 
   renderSingleRoot = async () => {
-    const base = this.folderRoots[0];
-    const stat = await fs.stat(base);
-    if (stat.isDirectory()) return await this.getChildrenItems(base); // Show only the children of the root folder
+    const pathObj = this.explorerPaths[0];
+    const stat = await fs.stat(pathObj.basePath);
+
     // Only one file, show just that file
-    return [new FSItem(path.basename(base) || base, base, true, true)]; // isFile = true, isRoot = true
+    if (stat.isFile()) {
+      new FSItem(path.basename(pathObj.basePath) || pathObj.basePath, pathObj.basePath, true, true, pathObj.include, pathObj.exclude);
+    } // isFile = true, isRoot = true
+
+    return await this.getChildrenItems(pathObj.basePath, pathObj.include, pathObj.exclude); // Show only the children of the root folder
   };
 
   renderNewItems = async () => {
-    if (this.folderRoots.length === 1) return await this.renderSingleRoot();
+    if (this.explorerPaths.length === 1) return await this.renderSingleRoot();
     // Multiple valid paths: show each as root (file or folder)
-    const items = this.folderRoots.map((f) => {
-      try {
-        const stat = fs.statSync(f);
-        return new FSItem(path.basename(f) || f, f, stat.isFile(), true); // isRoot = true
-      } catch {
-        return null;
-      }
-    });
-    return items.filter((i): i is FSItem => i !== null).sort(this.compareItems);
+    const items: FSItem[] = [];
+    for (const pathObj of this.explorerPaths) {
+      const [stat, error] = await safePromise(fs.stat(pathObj.basePath));
+      if (error) continue;
+      items.push(new FSItem(pathObj.name, pathObj.basePath, stat.isFile(), true, pathObj.include, pathObj.exclude)); // isRoot = true
+    }
+    return items.sort(this.compareItems);
   };
 
   async getChildren(element?: FSItem): Promise<FSItem[]> {
@@ -109,7 +96,7 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
       if (!element) return await this.renderNewItems();
       const full = element.fullPath;
       const stat = await fs.stat(full);
-      if (stat.isDirectory()) return await this.getChildrenItems(full);
+      if (stat.isDirectory()) return await this.getChildrenItems(full, element.include, element.exclude);
       return [];
     } catch (e) {
       return [];

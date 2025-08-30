@@ -1,10 +1,13 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 
+import * as fsx from 'fs-extra';
+import * as path from 'path';
 import * as vscode from 'vscode';
 import { registerCommands } from './commands/commands';
 import { FSItem } from './models/FSItem';
 import { SecondaryExplorerProvider } from './providers/SecondaryExplorerProvider';
+import { Settings } from './utils/Settings';
 
 export function activate(context: vscode.ExtensionContext) {
   const provider = new SecondaryExplorerProvider(context);
@@ -18,20 +21,13 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Dynamically set view title if only one folder
   function updateViewTitle() {
-    const cfg = vscode.workspace.getConfiguration();
-    const paths = cfg.get<string[]>('secondaryExplorer.paths') || [];
-    if (paths.length === 1) {
-      const fs = require('fs');
-      const pathMod = require('path');
-      try {
-        const stat = fs.statSync(paths[0]);
-        if (stat.isDirectory()) {
-          treeView.title = pathMod.basename(paths[0]);
-          return;
-        }
-      } catch {}
+    if (Settings.paths.length === 1) {
+      const stat = fsx.statSync(Settings.paths[0].basePath);
+      if (stat.isDirectory()) {
+        treeView.title = Settings.paths[0].name || path.basename(Settings.paths[0].basePath);
+        return;
+      }
     }
-    // Default title
     treeView.title = 'Secondary Explorer';
   }
   updateViewTitle();
@@ -53,8 +49,8 @@ export function activate(context: vscode.ExtensionContext) {
     let selectedType = '';
     let isRoot = false;
     if (Array.isArray(selection) && selection.length > 0) {
-      const roots = provider.getRootPaths();
-      isRoot = selection.some((item) => roots.includes(item.fullPath));
+      const roots = Settings.paths;
+      isRoot = selection.some((item) => roots.some((ep) => ep.basePath === item.fullPath));
       // If all selected are folders, type is 'folder', if all are files, 'file', else ''
       const allFolders = selection.every((item) => item.type === 'folder');
       const allFiles = selection.every((item) => item.type === 'file');

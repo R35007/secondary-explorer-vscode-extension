@@ -3,11 +3,15 @@ import * as vscode from 'vscode';
 export class FSItem extends vscode.TreeItem {
   fullPath: string;
   type: 'file' | 'folder';
-  constructor(label: string, fullPath: string, isFile: boolean, isRoot: boolean) {
+  include: string[] | undefined;
+  exclude: string[] | undefined;
+  constructor(label: string, fullPath: string, isFile: boolean, isRoot: boolean, include?: string[], exclude?: string[]) {
     super(label, !isFile ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None);
     this.fullPath = fullPath;
     this.contextValue = isRoot ? 'root' : isFile ? 'file' : 'folder';
     this.type = isFile ? 'file' : 'folder';
+    this.include = include;
+    this.exclude = exclude;
 
     if (isFile) {
       this.command = {

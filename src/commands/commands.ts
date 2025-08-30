@@ -280,7 +280,7 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
       const selArr = getSelectedItems(item);
       const sel = selArr.length > 0 ? selArr[0] : undefined;
       if (!sel) return;
-      await vscode.env.clipboard.writeText(sel.fullPath);
+      await vscode.env.clipboard.writeText(sel.fullPath.replace(/\\/g, '/'));
       vscode.window.setStatusBarMessage('Path copied to clipboard', 1500);
     }),
   );
@@ -301,7 +301,7 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
         }
       }
       if (bestRoot) relPath = path.relative(bestRoot, sel.fullPath);
-      await vscode.env.clipboard.writeText(relPath);
+      await vscode.env.clipboard.writeText(relPath.replace(/\\/g, '/'));
       vscode.window.setStatusBarMessage('Relative path copied to clipboard', 1500);
     }),
   );

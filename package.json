@@ -49,9 +49,66 @@
       "properties": {
         "secondaryExplorer.paths": {
           "type": "array",
-          "description": "List of local file or folder paths to show in the Secondary Explorer (workspace-level recommended). Only existing files and folders will be shown.",
+          "description": "List of groups to show in Secondary Explorer. Each item can be a string path or an object with baseFolder, pattern(s), ignorepattern(s), and title.",
           "items": {
-            "type": "string"
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "basePath": {
+                    "type": "string",
+                    "markdownDescription": "Base folder path. Supports ${workspaceFolder} and ${userHome}. If omitted, uses current workspace folder."
+                  },
+                  "include": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "default": "*"
+                      },
+                      {
+                        "type": "array",
+                        "default": [
+                          "*"
+                        ],
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    ],
+                    "markdownDescription": "Glob pattern(s) to include. Examples: *.md. Defaults to *"
+                  },
+                  "exclude": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "default": "node_modules"
+                      },
+                      {
+                        "type": "array",
+                        "default": [
+                          "node_modules",
+                          "dist",
+                          "build",
+                          "out"
+                        ],
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    ],
+                    "markdownDescription": "Glob pattern(s) to ignore or exclude. Defaults to node_modules, dist, build, out"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Optional name for this group. Defaults to folder name."
+                  }
+                },
+                "additionalProperties": false
+              }
+            ]
           },
           "default": []
         }
@@ -355,6 +412,8 @@
     "test": "vscode-test"
   },
   "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/micromatch": "^4.0.9",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "@types/vscode": "^1.100.0",
@@ -371,7 +430,7 @@
     "webpack-cli": "^6.0.1"
   },
   "dependencies": {
-    "@types/fs-extra": "^11.0.4",
-    "fs-extra": "^11.3.1"
+    "fs-extra": "^11.3.1",
+    "micromatch": "^4.0.8"
   }
 }
