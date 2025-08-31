@@ -5,6 +5,15 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [5.0.1] - 2025-08-31
+
+ - Improved clipboard logic for cut/copy/paste actions and context key updates
+ - Fixed error handling for file/folder creation, renaming, and deletion
+ - Enhanced keyboard navigation and focus management for explorer actions
+ - Improved progress bar logic for bulk operations (delete/paste)
+ - Reduced unnecessary refreshes for better performance
+ - Updated command registration for accessibility and reliability
+
 ## [5.0.0] - 2025-08-30
 
 - New: List view mode with quick toggle between Tree and List (commands: View as List / View as Tree)
