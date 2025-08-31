@@ -30,7 +30,7 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
   }
 
   loadPaths() {
-    this.explorerPaths = Settings.paths;
+    this.explorerPaths = Settings.parsedPaths;
   }
 
   refresh(): void {
@@ -79,8 +79,8 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
       const [pathStats, error] = await safePromise(fs.stat(fullPath));
       if (error) continue;
       // continue if path or file matches exclude patterns or doesn't match include patterns
-      if (exclude && exclude.length > 0 && micromatch.isMatch(fullPath, exclude)) continue;
-      if (pathStats.isFile() && include && include.length > 0 && !micromatch.isMatch(fullPath, include)) continue;
+      if (exclude && exclude.length > 0 && micromatch.isMatch(fullPath, exclude, { dot: true })) continue;
+      if (pathStats.isFile() && include && include.length > 0 && !micromatch.isMatch(fullPath, include, { dot: true })) continue;
       if (pathStats.isDirectory() && include && include.length > 0 && !(await hasMatchingChild(fullPath, include))) continue;
 
       items.push(new FSItem(label, fullPath, pathStats.isFile(), false, include, exclude)); // isRoot = false
@@ -94,27 +94,28 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
 
     // Only one file, show just that file
     if (stat.isFile()) {
-      new FSItem(path.basename(pathObj.basePath) || pathObj.basePath, pathObj.basePath, true, true, pathObj.include, pathObj.exclude);
-    } // isFile = true, isRoot = true
+      return [new FSItem(pathObj.name, pathObj.basePath, true, true, pathObj.include, pathObj.exclude, 0)];
+    }
+    // isFile = true, isRoot = true
 
     return await this.getChildrenItems(pathObj.basePath, pathObj.include, pathObj.exclude); // Show only the children of the root folder
   };
 
-  renderNewItems = async () => {
+  renderRootItems = async () => {
     if (this.explorerPaths.length === 1) return await this.renderSingleRoot();
     // Multiple valid paths: show each as root (file or folder)
     const items: FSItem[] = [];
-    for (const pathObj of this.explorerPaths) {
+    for (const [index, pathObj] of this.explorerPaths.entries()) {
       const [stat, error] = await safePromise(fs.stat(pathObj.basePath));
       if (error) continue;
-      items.push(new FSItem(pathObj.name, pathObj.basePath, stat.isFile(), true, pathObj.include, pathObj.exclude)); // isRoot = true
+      items.push(new FSItem(pathObj.name, pathObj.basePath, stat.isFile(), true, pathObj.include, pathObj.exclude, index)); // isRoot = true, pass index
     }
     return items.sort(this.compareItems);
   };
 
   async getChildren(element?: FSItem): Promise<FSItem[]> {
     try {
-      if (!element) return await this.renderNewItems();
+      if (!element) return await this.renderRootItems();
       const full = element.fullPath;
       const stat = await fs.stat(full);
       if (stat.isDirectory()) return await this.getChildrenItems(full, element.include, element.exclude);

@@ -1,6 +1,8 @@
 import * as fsx from 'fs-extra';
 import * as micromatch from 'micromatch';
 import * as path from 'path';
+import * as vscode from 'vscode';
+import { FSItem } from '../models/FSItem';
 
 export function splitNameExt(filename: string) {
   const ext = path.extname(filename);
@@ -92,4 +94,20 @@ export async function hasMatchingChild(folderPath: string, patterns: string[] = 
   }
 
   return false;
+}
+
+export function getSelectedItems(treeView: vscode.TreeView<FSItem>) {
+  // Helper to filter unique items by fullPath
+  function uniqueByFullPath(items: readonly FSItem[]): FSItem[] {
+    const seen = new Set<string>();
+    return items.filter((item) => {
+      if (seen.has(item.fullPath.replace(/\\/g, '/').toLowerCase())) return false;
+      seen.add(item.fullPath.replace(/\\/g, '/').toLowerCase());
+      return true;
+    });
+  }
+
+  // If nothing passed, use selection
+  if (treeView.selection && treeView.selection.length > 0) return uniqueByFullPath(treeView.selection).filter((s) => !!s);
+  return [];
 }

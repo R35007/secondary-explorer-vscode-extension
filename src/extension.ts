@@ -21,10 +21,10 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Dynamically set view title if only one folder
   function updateViewTitle() {
-    if (Settings.paths.length === 1) {
-      const stat = fsx.statSync(Settings.paths[0].basePath);
+    if (Settings.parsedPaths.length === 1) {
+      const stat = fsx.statSync(Settings.parsedPaths[0].basePath);
       if (stat.isDirectory()) {
-        treeView.title = Settings.paths[0].name || path.basename(Settings.paths[0].basePath);
+        treeView.title = Settings.parsedPaths[0].name || path.basename(Settings.parsedPaths[0].basePath);
         return;
       }
     }
@@ -39,28 +39,13 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Restore context key logic for keybindings and view title icons
   vscode.commands.executeCommand('setContext', 'secondaryExplorerViewVisible', false);
-  vscode.commands.executeCommand('setContext', 'secondaryExplorerSelectedIsRoot', false);
   vscode.commands.executeCommand('setContext', 'secondaryExplorerHasSelection', false);
   vscode.commands.executeCommand('setContext', 'secondaryExplorerRootViewAsList', false);
-  vscode.commands.executeCommand('setContext', 'secondaryExplorerSelectedType', '');
   context.subscriptions.push(
     treeView.onDidChangeVisibility((e) => vscode.commands.executeCommand('setContext', 'secondaryExplorerViewVisible', e.visible)),
   );
   function updateSelectionContext(selection: readonly FSItem[]) {
-    let selectedType = '';
-    let isRoot = false;
-    if (Array.isArray(selection) && selection.length > 0) {
-      const roots = Settings.paths;
-      isRoot = selection.some((item) => roots.some((ep) => ep.basePath === item.fullPath));
-      // If all selected are folders, type is 'folder', if all are files, 'file', else ''
-      const allFolders = selection.every((item) => item.type === 'folder');
-      const allFiles = selection.every((item) => item.type === 'file');
-      if (allFolders) selectedType = 'folder';
-      else if (allFiles) selectedType = 'file';
-    }
-    vscode.commands.executeCommand('setContext', 'secondaryExplorerSelectedIsRoot', isRoot);
-    vscode.commands.executeCommand('setContext', 'secondaryExplorerSelectedType', selectedType);
-    vscode.commands.executeCommand('setContext', 'secondaryExplorerHasSelection', true);
+    vscode.commands.executeCommand('setContext', 'secondaryExplorerHasSelection', selection.length > 0);
   }
 
   context.subscriptions.push(

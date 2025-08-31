@@ -29,7 +29,15 @@ export class Settings {
   }
 
   static get paths() {
-    const paths = (Settings.getSettings('paths') as Array<string | UserPaths>) || [];
+    return (Settings.getSettings('paths') as Array<string | UserPaths>) || [];
+  }
+
+  static set paths(paths: Array<string | UserPaths>) {
+    Settings.setSettings('paths', paths);
+  }
+
+  static get parsedPaths() {
+    const paths = Settings.paths;
     const workspaceFolders = vscode.workspace.workspaceFolders || [];
     const userHome = process.env.HOME || process.env.USERPROFILE || '';
     const defaultInclude = ['*'];

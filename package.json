@@ -2,7 +2,7 @@
   "name": "secondary-explorer",
   "displayName": "Secondary Explorer",
   "description": "Adds a secondary explorer view to manage files and folders outside the default workspace explorer.",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "icon": "images/logo.png",
   "publisher": "Thinker",
   "license": "MIT",
@@ -353,7 +353,7 @@
         },
         {
           "command": "secondary-explorer.pasteEntry",
-          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
+          "when": "view == secondaryExplorerView && secondaryExplorerHasClipboard && (viewItem == file || viewItem == folder)",
           "group": "navigation@7"
         },
         {
@@ -375,7 +375,7 @@
       "view/title": [
         {
           "command": "secondary-explorer.createEntry",
-          "when": "view == secondaryExplorerView && (secondaryExplorerSelectedType == 'file' || secondaryExplorerSelectedType == 'folder') && !(secondaryExplorerSelectedType == 'file' && secondaryExplorerSelectedIsRoot)",
+          "when": "view == secondaryExplorerView && secondaryExplorerHasSelection",
           "group": "navigation@1"
         },
         {
@@ -419,7 +419,7 @@
       {
         "command": "secondary-explorer.pasteEntry",
         "key": "ctrl+v",
-        "when": "focusedView == secondaryExplorerView && secondaryExplorerHasSelection && !inputFocus"
+        "when": "focusedView == secondaryExplorerView && secondaryExplorerHasClipboard && secondaryExplorerHasSelection && !inputFocus"
       },
       {
         "command": "secondary-explorer.renameEntry",
