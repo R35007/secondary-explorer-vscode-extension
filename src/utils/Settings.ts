@@ -40,8 +40,8 @@ export class Settings {
     const paths = Settings.paths;
     const workspaceFolders = vscode.workspace.workspaceFolders || [];
     const userHome = process.env.HOME || process.env.USERPROFILE || '';
-    const defaultInclude = ['*'];
-    const defaultExclude = ['node_modules', 'dist', 'build', 'out'];
+    const defaultInclude: string[] = [];
+    const defaultExclude: string[] = ['node_modules', 'dist', 'build', 'out'];
 
     // get Normalized paths
     const normalized: NormalizedPaths[] = paths.map((p) => {

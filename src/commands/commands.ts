@@ -39,29 +39,41 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
     Settings.paths = [...new Set([...existing, ...pickedPaths])];
   };
 
-  const openInTerminal = async (item: FSItem) => {
-    const targetPath = item.type === 'file' ? path.dirname(item.fullPath) : item.fullPath;
+  const openInTerminal = async (item?: FSItem) => {
+    const treeViewItem = item || getSelectedItems(treeView).at(-1);
+    if (!treeViewItem) return;
+
+    const targetPath = treeViewItem.type === 'file' ? path.dirname(treeViewItem.fullPath) : treeViewItem.fullPath;
     const term = vscode.window.createTerminal({ cwd: targetPath });
     term.show();
   };
 
-  const openFolderInNewWindow = async (item: FSItem) => {
-    const targetFolder = item.type === 'file' ? path.dirname(item.fullPath) : item.fullPath;
+  const openFolderInNewWindow = async (item?: FSItem) => {
+    const treeViewItem = item || getSelectedItems(treeView).at(-1);
+    if (!treeViewItem) return;
+
+    const targetFolder = treeViewItem.type === 'file' ? path.dirname(treeViewItem.fullPath) : treeViewItem.fullPath;
     await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(targetFolder), true);
   };
 
-  const removePath = async (item: FSItem) => {
-    if (item.rootIndex < 0) {
+  const removePath = async (item?: FSItem) => {
+    const treeViewItem = item || getSelectedItems(treeView).at(-1);
+    if (!treeViewItem) return;
+
+    if (treeViewItem.rootIndex < 0) {
       vscode.window.showWarningMessage('This path is not a root path in the configuration.');
       return;
     }
-    Settings.paths = Settings.paths.filter((_, index) => index !== item.rootIndex);
+    Settings.paths = Settings.paths.filter((_, index) => index !== treeViewItem.rootIndex);
     provider.refresh();
     vscode.window.setStatusBarMessage('Path removed from Secondary Explorer', 1500);
   };
 
-  const createEntry = async (item: FSItem) => {
-    const basePath = item.type === 'folder' ? item.fullPath : path.dirname(item?.fullPath);
+  const createEntry = async (item?: FSItem) => {
+    const treeViewItem = item || getSelectedItems(treeView).at(-1);
+    if (!treeViewItem) return;
+
+    const basePath = treeViewItem.type === 'folder' ? treeViewItem.fullPath : path.dirname(treeViewItem?.fullPath);
     // get the nearest rootPath
     const nearestRootPath =
       Settings.parsedPaths.find((p) => basePath.replace(/\\/g, '/').toLowerCase().startsWith(p.basePath.replace(/\\/g, '/').toLowerCase()))
@@ -104,50 +116,57 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
     }
   };
 
-  const openFile = async (item: FSItem) => {
-    if (!item || item.type !== 'file') return;
-    const uri = vscode.Uri.file(item.fullPath);
-    await vscode.commands.executeCommand('vscode.open', uri, {
-      preview: true,
-      preserveFocus: true,
-    });
+  const openFile = async (item?: FSItem) => {
+    const selectedFiles = getSelectedItems(treeView).filter((i) => i.type === 'file');
+    const filesToOpen = selectedFiles.length <= 1 && item ? (item.type === 'file' ? [item] : []) : selectedFiles;
+    if (!filesToOpen.length) return;
+    // Open each file
+    for (let fileItem of filesToOpen) {
+      const uri = vscode.Uri.file(fileItem.fullPath);
+      await vscode.window.showTextDocument(uri, { preview: filesToOpen.length === 1, preserveFocus: true });
+    }
     try {
-      await treeView.reveal(item, { select: true, focus: true });
+      item && (await treeView.reveal(item, { select: true, focus: true }));
     } catch {}
   };
 
-  const cutEntry = async (item?: FSItem | FSItem[]) => {
+  const cutEntry = async (item?: FSItem) => {
     const selectedItems = getSelectedItems(treeView);
-    if (selectedItems.length === 0) return;
     vscode.commands.executeCommand('setContext', 'secondaryExplorerHasClipboard', true);
-    clipboard = { type: 'cut', items: selectedItems };
-    vscode.window.setStatusBarMessage(`Cut: ${selectedItems.map((s) => s.label).join(', ')}`, 1500);
+    clipboard = { type: 'cut', items: selectedItems.length <= 1 && item ? [item] : selectedItems };
+    vscode.window.setStatusBarMessage(`Cut!`, 1500);
   };
 
-  const copyEntry = async (item?: FSItem | FSItem[]) => {
+  const copyEntry = async (item?: FSItem) => {
     const selectedItems = getSelectedItems(treeView);
-    if (selectedItems.length === 0) return;
-    clipboard = { type: 'copy', items: selectedItems };
+    clipboard = { type: 'copy', items: selectedItems.length <= 1 && item ? [item] : selectedItems };
     vscode.commands.executeCommand('setContext', 'secondaryExplorerHasClipboard', true);
-    vscode.window.setStatusBarMessage(`Copied: ${selectedItems.map((s) => s.label).join(', ')}`, 1500);
+    vscode.window.setStatusBarMessage(`Copied!`, 1500);
   };
 
-  const copyPath = async (item: FSItem) => {
-    await vscode.env.clipboard.writeText(item.fullPath.replace(/\\/g, '/'));
+  const copyPath = async (item?: FSItem) => {
+    const treeViewItem = item || getSelectedItems(treeView).at(-1);
+    if (!treeViewItem) return;
+    await vscode.env.clipboard.writeText(treeViewItem.fullPath.replace(/\\/g, '/'));
     vscode.window.setStatusBarMessage('Path copied to clipboard', 1500);
   };
 
-  const copyRelativePath = async (item: FSItem) => {
+  const copyRelativePath = async (item?: FSItem) => {
+    const treeViewItem = item || getSelectedItems(treeView).at(-1);
+    if (!treeViewItem) return;
+
     const nearestRootPath =
       Settings.parsedPaths.find((p) =>
-        item.fullPath.replace(/\\/g, '/').toLowerCase().startsWith(p.basePath.replace(/\\/g, '/').toLowerCase()),
-      )?.basePath || item.fullPath;
-    await vscode.env.clipboard.writeText(path.relative(nearestRootPath, item.fullPath).replace(/\\/g, '/'));
+        treeViewItem.fullPath.replace(/\\/g, '/').toLowerCase().startsWith(p.basePath.replace(/\\/g, '/').toLowerCase()),
+      )?.basePath || treeViewItem.fullPath;
+    const relativePath = path.relative(nearestRootPath, treeViewItem.fullPath).replace(/\\/g, '/') || path.basename(nearestRootPath);
+    const copyText = treeViewItem.contextValue === 'root' ? relativePath : `${path.basename(nearestRootPath)}/${relativePath}`;
+    await vscode.env.clipboard.writeText(copyText);
     vscode.window.setStatusBarMessage('Relative path copied to clipboard', 1500);
   };
 
   const renameEntry = async (item?: FSItem) => {
-    const treeViewItem = item || (treeView.selection.length >= 0 ? treeView.selection.at(-1) : undefined);
+    const treeViewItem = item || getSelectedItems(treeView).at(-1);
     if (!treeViewItem) return;
 
     const oldPath = treeViewItem.fullPath;
@@ -185,12 +204,13 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
     }
   };
 
-  const deleteEntry = async (item?: FSItem | FSItem[]) => {
+  const deleteEntry = async (item?: FSItem) => {
     const selectedItems = getSelectedItems(treeView);
-    if (selectedItems.length === 0) return;
-    const names = selectedItems.map((s) => (typeof s.label === 'string' ? s.label : (s.label?.label ?? s.fullPath)));
+    const itemsToDelete = selectedItems.length <= 1 && item ? [item] : selectedItems;
+    if (itemsToDelete.length === 0) return;
+    const names = itemsToDelete.map((s) => (typeof s.label === 'string' ? s.label : (s.label?.label ?? s.fullPath)));
     const confirm = await vscode.window.showWarningMessage(
-      `Delete the following ${selectedItems.length > 1 ? 'items' : 'item'}?\n${names.join('\n')}`,
+      `Delete the following ${itemsToDelete.length > 1 ? 'items' : 'item'}?\n${names.join('\n')}`,
       { modal: true },
       'Delete',
     );
@@ -239,16 +259,20 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
       return;
     }
 
-    const treeViewItem = item || (treeView.selection.length === 1 ? treeView.selection[0] : undefined);
+    const treeViewItem = item || getSelectedItems(treeView).at(0);
     if (!treeViewItem) return;
     const destPath = treeViewItem.type === 'file' ? path.dirname(treeViewItem.fullPath) : treeViewItem.fullPath;
 
-    const items = clipboard?.items ?? [];
-    const hasFolder = items.some((i) => i.type === 'folder');
-    let showProgress = items.length > 1 || hasFolder;
+    const itemsToCopy = clipboard?.items ?? [];
+
+    // Sanity check - ensure all items exist before proceeding
+    if (!itemsToCopy.length) return;
+
+    const hasFolder = itemsToCopy.some((i) => i.type === 'folder');
+    let showProgress = itemsToCopy.length > 1 || hasFolder;
 
     const doPaste = async (progress?: vscode.Progress<unknown>) => {
-      for (const [idx, item] of items.entries()) {
+      for (const [idx, item] of itemsToCopy.entries()) {
         const baseName = path.basename(item.fullPath);
         let newPath = path.join(destPath, baseName);
         let fileIdx = 1;
@@ -267,7 +291,7 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
           vscode.window.showErrorMessage(`Paste failed: ${String(e)}`);
         }
         if (showProgress && progress) {
-          progress.report({ increment: Math.floor((100 * (idx + 1)) / items.length) });
+          progress.report({ increment: Math.floor((100 * (idx + 1)) / itemsToCopy.length) });
         }
       }
     };

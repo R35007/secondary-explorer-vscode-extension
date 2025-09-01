@@ -5,6 +5,14 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [5.0.2] - 2025-09-01
+
+- Fixed issues with "Copy Relative Path" command
+- Fixed bug when opening multiple selected files in the explorer
+- Improved accessibility in explorer actions and menus
+- Refined context menu logic for better keyboard and screen reader support
+- Minor documentation and metadata updates
+
 ## [5.0.1] - 2025-08-31
 
  - Improved clipboard logic for cut/copy/paste actions and context key updates
