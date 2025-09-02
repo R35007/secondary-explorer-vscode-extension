@@ -61,11 +61,16 @@ The extension activates automatically on startup and adds a new "Secondary Explo
 - **Copy Path/Relative Path**: Right-click to copy absolute or relative path to clipboard.
 - **Open Folder in New Window**: Right-click any file or folder to open it in a new VS Code window.
 - **Open In Integrated Terminal**: Right-click any file or folder to open it in a VS Code Integrated Terminal.
+- **Open to the Side**: Right-click any file to open the file to the side.
 - **Open File**: Click or Enter to open files.
 
 ### Keyboard Shortcuts
 
-- `Delete`: Remove selected file or folder (when focused in Secondary Explorer).
+These are the following shortcut keys when focused in Secondary Explorer
+
+- `Enter`: Open File.
+- `Ctrl+N`: Create new FIle or Folder.
+- `Delete`: Remove selected file or folder.
 - `Ctrl+X`: Cut selected file or folder
 - `Ctrl+C`: Copy selected file or folder
 - `Ctrl+V`: Paste into selected folder
@@ -78,6 +83,7 @@ You can also toggle the view mode from the view title toolbar:
 ---
 
 ## Configuration
+
 
 Configure folders to display via VS Code settings:
 
@@ -94,16 +100,21 @@ Configure folders to display via VS Code settings:
   {
     "basePath": "${workspaceFolder}",
     "name": "Workspace",
-    "include": ["*.md", "*.txt"],
-    "exclude": ["node_modules", "dist", "build", "out"]
+    "include": ["*.md", "*.txt"], // include: only file patterns
+    "exclude": ["node_modules", "dist", "build", "out"] // exclude: file or folder patterns
   }
 ]
 ```
 
-- **Workspace-level configuration recommended.**
+**Include/Exclude Logic:**
+- `exclude` always takes priority over `include`.
+- `include` accepts only file patterns (e.g., `*.md`).
+- `exclude` accepts both file and folder patterns (e.g., `node_modules`, `*.log`).
+- For example: If you set `include: ["*.md"]` and `exclude: ["node_modules"]`, all Markdown files inside `node_modules` will be excluded from the tree view, even if they match the include pattern.
+
+**Workspace-level configuration recommended.**
 
 Notes:
-
 - Paths must be absolute and exist on disk to render.
 - Include/Exclude accept glob patterns; include is applied to files, and folders are expanded only if children match include.
 - Variable interpolation is supported in string and object forms: ${workspaceFolder}, ${userHome}.

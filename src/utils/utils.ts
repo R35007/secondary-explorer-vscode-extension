@@ -1,5 +1,4 @@
 import * as fsx from 'fs-extra';
-import * as micromatch from 'micromatch';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { FSItem } from '../models/FSItem';
@@ -65,37 +64,6 @@ export async function safePromise<T>(promise: Promise<T>): Promise<[T, undefined
 
 export const getFormattedPatternPaths = (paths: string[]) => paths.filter(Boolean).map((item) => `**/${item.replace(/\\/g, '/')}`);
 
-/**
- * Recursively checks if any nested file or folder matches the given patterns.
- * @param {string} folderPath - The root folder to start searching from.
- * @param {string[]} patterns - List of glob-like patterns to match against.
- * @returns {Promise<boolean>} - True if any child matches, false otherwise.
- */
-export async function hasMatchingChild(folderPath: string, patterns: string[] = ['**/*']): Promise<boolean> {
-  if (!(await fsx.pathExists(folderPath))) return false;
-
-  const stack = [folderPath];
-
-  while (stack.length > 0) {
-    const currentPath = stack.pop() as string;
-    const [entries, error] = await safePromise(fsx.promises.readdir(currentPath, { withFileTypes: true }));
-    if (error) continue;
-
-    for (const entry of entries) {
-      const fullPath = path.join(currentPath, entry.name);
-      const relativePath = path.relative(folderPath, fullPath);
-
-      // return true if any file or folder matches the patterns
-      if (micromatch.isMatch(relativePath, patterns)) return true;
-
-      // If it's a directory, add to stack to check its children
-      if (entry.isDirectory()) stack.push(fullPath);
-    }
-  }
-
-  return false;
-}
-
 export function getSelectedItems(treeView: vscode.TreeView<FSItem>) {
   // Helper to filter unique items by fullPath
   function uniqueByFullPath(items: readonly FSItem[]): FSItem[] {
@@ -110,4 +78,8 @@ export function getSelectedItems(treeView: vscode.TreeView<FSItem>) {
   // If nothing passed, use selection
   if (treeView.selection && treeView.selection.length > 0) return uniqueByFullPath(treeView.selection).filter((s) => !!s);
   return [];
+}
+
+export function setContext(key: string, value: any) {
+  return vscode.commands.executeCommand('setContext', key, value);
 }

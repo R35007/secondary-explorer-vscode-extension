@@ -5,7 +5,7 @@ import { FSItem } from '../models/FSItem';
 import { SecondaryExplorerProvider } from '../providers/SecondaryExplorerProvider';
 import { isWindows, windowsInvalidName } from '../utils/constants';
 import { Settings } from '../utils/Settings';
-import { exists, existsAsync, getSelectedItems, sanitizeRelative, splitNameExt } from '../utils/utils';
+import { exists, existsAsync, getSelectedItems, sanitizeRelative, setContext, splitNameExt } from '../utils/utils';
 
 export function registerCommands(context: vscode.ExtensionContext, provider: SecondaryExplorerProvider, treeView: vscode.TreeView<FSItem>) {
   // Clipboard state for cut/copy/paste
@@ -123,7 +123,28 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
     // Open each file
     for (let fileItem of filesToOpen) {
       const uri = vscode.Uri.file(fileItem.fullPath);
-      await vscode.window.showTextDocument(uri, { preview: filesToOpen.length === 1, preserveFocus: true });
+      await vscode.commands.executeCommand('vscode.open', uri, {
+        preview: filesToOpen.length === 1,
+        preserveFocus: true,
+      });
+    }
+    try {
+      item && (await treeView.reveal(item, { select: true, focus: true }));
+    } catch {}
+  };
+
+  const openToTheSide = async (item?: FSItem) => {
+    const selectedFiles = getSelectedItems(treeView).filter((i) => i.type === 'file');
+    const filesToOpen = selectedFiles.length <= 1 && item ? (item.type === 'file' ? [item] : []) : selectedFiles;
+    if (!filesToOpen.length) return;
+    // Open each file
+    for (let fileItem of filesToOpen) {
+      const uri = vscode.Uri.file(fileItem.fullPath);
+      await vscode.commands.executeCommand('vscode.open', uri, {
+        viewColumn: vscode.ViewColumn.Beside,
+        preview: filesToOpen.length === 1,
+        preserveFocus: true,
+      });
     }
     try {
       item && (await treeView.reveal(item, { select: true, focus: true }));
@@ -132,7 +153,7 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
 
   const cutEntry = async (item?: FSItem) => {
     const selectedItems = getSelectedItems(treeView);
-    vscode.commands.executeCommand('setContext', 'secondaryExplorerHasClipboard', true);
+    setContext('secondaryExplorerHasClipboard', true);
     clipboard = { type: 'cut', items: selectedItems.length <= 1 && item ? [item] : selectedItems };
     vscode.window.setStatusBarMessage(`Cut!`, 1500);
   };
@@ -140,7 +161,7 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
   const copyEntry = async (item?: FSItem) => {
     const selectedItems = getSelectedItems(treeView);
     clipboard = { type: 'copy', items: selectedItems.length <= 1 && item ? [item] : selectedItems };
-    vscode.commands.executeCommand('setContext', 'secondaryExplorerHasClipboard', true);
+    setContext('secondaryExplorerHasClipboard', true);
     vscode.window.setStatusBarMessage(`Copied!`, 1500);
   };
 
@@ -311,7 +332,7 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
       await doPaste();
     }
     clipboard = null;
-    vscode.commands.executeCommand('setContext', 'secondaryExplorerHasClipboard', false);
+    setContext('secondaryExplorerHasClipboard', false);
     provider.refresh();
   };
 
@@ -328,6 +349,7 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
     removePath,
     createEntry,
     openFile,
+    openToTheSide,
     cutEntry,
     copyEntry,
     copyPath,

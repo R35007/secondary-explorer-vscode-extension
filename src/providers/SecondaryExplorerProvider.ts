@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 
 import { FSItem } from '../models/FSItem';
 import { NormalizedPaths, Settings } from '../utils/Settings';
-import { hasMatchingChild, safePromise } from '../utils/utils';
+import { safePromise, setContext } from '../utils/utils';
 
 export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<FSItem | undefined | void> = new vscode.EventEmitter<FSItem | undefined | void>();
@@ -39,7 +39,7 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
 
   toggleListView(): void {
     this.shouldViewAsList = !this.shouldViewAsList;
-    vscode.commands.executeCommand('setContext', 'secondaryExplorerRootViewAsList', this.shouldViewAsList);
+    setContext('secondaryExplorerRootViewAsList', this.shouldViewAsList);
     this.refresh();
   }
 
@@ -79,9 +79,15 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
       const [pathStats, error] = await safePromise(fs.stat(fullPath));
       if (error) continue;
       // continue if path or file matches exclude patterns or doesn't match include patterns
-      if (exclude && exclude.length > 0 && micromatch.isMatch(fullPath, exclude, { dot: true })) continue;
-      if (pathStats.isFile() && include && include.length > 0 && !micromatch.isMatch(fullPath, include, { dot: true })) continue;
-      if (pathStats.isDirectory() && include && include.length > 0 && !(await hasMatchingChild(fullPath, include))) continue;
+      if (exclude?.length && micromatch.isMatch(fullPath, exclude, { dot: true })) continue;
+      if (pathStats.isFile() && include?.length && !micromatch.isMatch(fullPath, include, { dot: true })) continue;
+      if (
+        pathStats.isDirectory() &&
+        (include?.length || exclude?.length) &&
+        !(await this.getChildrenItems(fullPath, include, exclude)).length
+      ) {
+        continue;
+      }
 
       items.push(new FSItem(label, fullPath, pathStats.isFile(), false, include, exclude)); // isRoot = false
     }

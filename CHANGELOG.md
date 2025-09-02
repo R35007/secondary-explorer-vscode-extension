@@ -5,6 +5,13 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [5.0.3] - 2025-09-02
+
+- Fixed issues with "Open File" as preview.
+- Fixed issues with opening multiple files.
+- Fixed issues with include and exclude patterns that returns a empty folder.
+- Added `secondary-explorer.openToTheSide` command that helps to open the file in side.
+
 ## [5.0.2] - 2025-09-01
 
 - Fixed issues with "Copy Relative Path" command

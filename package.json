@@ -2,7 +2,7 @@
   "name": "secondary-explorer",
   "displayName": "Secondary Explorer",
   "description": "Adds a secondary explorer view to manage files and folders outside the default workspace explorer.",
-  "version": "5.0.2",
+  "version": "5.0.3",
   "icon": "images/logo.png",
   "publisher": "Thinker",
   "license": "MIT",
@@ -168,6 +168,11 @@
         "icon": "$(eye)"
       },
       {
+        "command": "secondary-explorer.openToTheSide",
+        "title": "Open to the Side",
+        "icon": "$(eye)"
+      },
+      {
         "command": "secondary-explorer.openFolderInNewWindow",
         "title": "Open in New Window",
         "icon": "$(link-external)"
@@ -259,6 +264,10 @@
           "when": "false"
         },
         {
+          "command": "secondary-explorer.openToTheSide",
+          "when": "false"
+        },
+        {
           "command": "secondary-explorer.openFolderInNewWindow",
           "when": "false"
         },
@@ -328,19 +337,24 @@
           "group": "navigation@2"
         },
         {
-          "command": "secondary-explorer.revealInFileExplorer",
-          "when": "view == secondaryExplorerView",
+          "command": "secondary-explorer.openToTheSide",
+          "when": "view == secondaryExplorerView && viewItem == file",
           "group": "navigation@3"
         },
         {
-          "command": "secondary-explorer.openInTerminal",
+          "command": "secondary-explorer.revealInFileExplorer",
           "when": "view == secondaryExplorerView",
           "group": "navigation@4"
         },
         {
+          "command": "secondary-explorer.openInTerminal",
+          "when": "view == secondaryExplorerView",
+          "group": "navigation@5"
+        },
+        {
           "command": "secondary-explorer.openFolderInNewWindow",
           "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
-          "group": "navigation@5"
+          "group": "navigation@6"
         },
         {
           "command": "secondary-explorer.createEntry",

@@ -7,11 +7,12 @@ import * as vscode from 'vscode';
 import { registerCommands } from './commands/commands';
 import { SecondaryExplorerProvider } from './providers/SecondaryExplorerProvider';
 import { Settings } from './utils/Settings';
+import { setContext } from './utils/utils';
 
 export function activate(context: vscode.ExtensionContext) {
   // Restore context key logic for keybindings and view title icons
-  vscode.commands.executeCommand('setContext', 'secondaryExplorerHasSelection', false);
-  vscode.commands.executeCommand('setContext', 'secondaryExplorerRootViewAsList', false);
+  setContext('secondaryExplorerHasSelection', false);
+  setContext('secondaryExplorerRootViewAsList', false);
 
   const provider = new SecondaryExplorerProvider(context);
   const treeView = vscode.window.createTreeView('secondaryExplorerView', {
@@ -42,11 +43,7 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   context.subscriptions.push(treeView.onDidChangeVisibility((e) => provider.refresh()));
-  context.subscriptions.push(
-    treeView.onDidChangeSelection((e) =>
-      vscode.commands.executeCommand('setContext', 'secondaryExplorerHasSelection', e.selection.length > 0),
-    ),
-  );
+  context.subscriptions.push(treeView.onDidChangeSelection((e) => setContext('secondaryExplorerHasSelection', e.selection.length > 0)));
 }
 
 export function deactivate() {}
