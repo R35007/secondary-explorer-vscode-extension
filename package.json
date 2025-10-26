@@ -113,6 +113,13 @@
           },
           "default": []
         }
+      ,
+      "secondaryExplorer.expandFolders": {
+        "type": "boolean",
+        "default": false,
+        "scope": "window",
+        "description": "Show folders expanded by default in Secondary Explorer"
+      }
       }
     },
     "views": {

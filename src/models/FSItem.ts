@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { Settings } from '../utils/Settings';
 
 export class FSItem extends vscode.TreeItem {
   fullPath: string;
@@ -15,7 +16,13 @@ export class FSItem extends vscode.TreeItem {
     exclude?: string[],
     index: number = -1,
   ) {
-    super(label, !isFile ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None);
+    const expandFolders = Settings.getSettings('expandFolders') as boolean | undefined;
+    const collapsibleState = isFile
+      ? vscode.TreeItemCollapsibleState.None
+      : expandFolders
+        ? vscode.TreeItemCollapsibleState.Expanded
+        : vscode.TreeItemCollapsibleState.Collapsed;
+    super(label, collapsibleState);
     this.fullPath = fullPath;
     this.rootIndex = index;
     this.contextValue = isRoot ? 'root' : isFile ? 'file' : 'folder';

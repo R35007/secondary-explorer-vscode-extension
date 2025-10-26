@@ -21,7 +21,8 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
       if (
         e.affectsConfiguration('secondaryExplorer.paths') ||
         e.affectsConfiguration('workbench.iconTheme') ||
-        e.affectsConfiguration('workbench.tree.renderIcons')
+        e.affectsConfiguration('workbench.tree.renderIcons') ||
+        e.affectsConfiguration('secondaryExplorer.expandFolders')
       ) {
         this.loadPaths();
         this.refresh();
