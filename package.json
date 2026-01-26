@@ -311,7 +311,7 @@
       "explorer/context": [
         {
           "command": "secondary-explorer.addToSecondaryExplorer",
-          "group": "navigation@1"
+          "group": "navigation@99"
         }
       ],
       "editor/title/context": [
