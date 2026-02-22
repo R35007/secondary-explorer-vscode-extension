@@ -2,7 +2,7 @@
   "name": "secondary-explorer",
   "displayName": "Secondary Explorer",
   "description": "Adds a secondary explorer view to manage files and folders outside the default workspace explorer.",
-  "version": "5.0.3",
+  "version": "6.0.0",
   "icon": "images/logo.png",
   "publisher": "Thinker",
   "license": "MIT",
@@ -112,6 +112,21 @@
             ]
           },
           "default": []
+        },
+        "secondaryExplorer.deleteBehavior": {
+          "type": "string",
+          "enum": [
+            "alwaysAsk",
+            "recycleBin",
+            "permanent"
+          ],
+          "enumDescriptions": [
+            "Always ask before deleting (show confirmation dialog).",
+            "Move to recycle bin without asking.",
+            "Permanently delete without asking."
+          ],
+          "default": "recycleBin",
+          "description": "Controls how delete operations are handled."
         }
       }
     },
@@ -139,8 +154,8 @@
       },
       {
         "command": "secondary-explorer.pickPath",
-        "title": "Add Folder to Explorer",
-        "icon": "$(new-folder)"
+        "title": "Add File or Folder to Explorer",
+        "icon": "$(add)"
       },
       {
         "command": "secondary-explorer.openSettings",
@@ -148,9 +163,14 @@
         "icon": "$(gear)"
       },
       {
-        "command": "secondary-explorer.createEntry",
-        "title": "New File/Folder",
+        "command": "secondary-explorer.createFile",
+        "title": "New File...",
         "icon": "$(new-file)"
+      },
+      {
+        "command": "secondary-explorer.createFolder",
+        "title": "New Folder...",
+        "icon": "$(new-folder)"
       },
       {
         "command": "secondary-explorer.deleteEntry",
@@ -159,7 +179,7 @@
       },
       {
         "command": "secondary-explorer.renameEntry",
-        "title": "Rename",
+        "title": "Rename...",
         "icon": "$(edit)"
       },
       {
@@ -231,6 +251,16 @@
         "command": "secondary-explorer.viewAsTree",
         "title": "View as Tree",
         "icon": "$(list-unordered)"
+      },
+      {
+        "command": "secondary-explorer.copyToWorkspaceRoot",
+        "title": "Copy to Workspace Root",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "secondary-explorer.addSelectedToWorkspace",
+        "title": "Add Folder to Workspace...",
+        "icon": "$(add)"
       }
     ],
     "menus": {
@@ -248,7 +278,11 @@
           "when": "false"
         },
         {
-          "command": "secondary-explorer.createEntry",
+          "command": "secondary-explorer.createFile",
+          "when": "false"
+        },
+        {
+          "command": "secondary-explorer.createFolder",
           "when": "false"
         },
         {
@@ -305,6 +339,14 @@
         },
         {
           "command": "secondary-explorer.viewAsTree",
+          "when": "false"
+        },
+        {
+          "command": "secondary-explorer.copyToWorkspaceRoot",
+          "when": "false"
+        },
+        {
+          "command": "secondary-explorer.addSelectedToWorkspace",
           "when": "false"
         }
       ],
@@ -327,86 +369,106 @@
           "group": "inline"
         },
         {
+          "command": "secondary-explorer.addSelectedToWorkspace",
+          "when": "view == secondaryExplorerView",
+          "group": "navigation@1"
+        },
+        {
           "command": "secondary-explorer.removePath",
           "when": "view == secondaryExplorerView && viewItem == root",
-          "group": "navigation@1"
+          "group": "navigation@2"
         },
         {
           "command": "secondary-explorer.openFile",
           "when": "view == secondaryExplorerView && viewItem == file",
-          "group": "navigation@2"
+          "group": "navigation@3"
         },
         {
           "command": "secondary-explorer.openToTheSide",
           "when": "view == secondaryExplorerView && viewItem == file",
-          "group": "navigation@3"
+          "group": "navigation@4"
         },
         {
           "command": "secondary-explorer.revealInFileExplorer",
           "when": "view == secondaryExplorerView",
-          "group": "navigation@4"
+          "group": "navigation@5"
         },
         {
           "command": "secondary-explorer.openInTerminal",
           "when": "view == secondaryExplorerView",
-          "group": "navigation@5"
+          "group": "navigation@6"
         },
         {
           "command": "secondary-explorer.openFolderInNewWindow",
           "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
-          "group": "navigation@6"
+          "group": "navigation@7"
         },
         {
-          "command": "secondary-explorer.createEntry",
+          "command": "secondary-explorer.createFile",
           "when": "view == secondaryExplorerView",
-          "group": "operation@1"
+          "group": "2_creation@1"
+        },
+        {
+          "command": "secondary-explorer.createFolder",
+          "when": "view == secondaryExplorerView",
+          "group": "2_creation@2"
         },
         {
           "command": "secondary-explorer.cutEntry",
           "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
-          "group": "operation@2"
+          "group": "clipboard@1"
         },
         {
           "command": "secondary-explorer.copyEntry",
           "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
-          "group": "operation@3"
+          "group": "clipboard@2"
         },
         {
           "command": "secondary-explorer.pasteEntry",
-          "when": "view == secondaryExplorerView && secondaryExplorerHasClipboard && (viewItem == file || viewItem == folder)",
-          "group": "operation@4"
+          "when": "view == secondaryExplorerView",
+          "group": "clipboard@3"
         },
         {
           "command": "secondary-explorer.copyPath",
           "when": "view == secondaryExplorerView",
-          "group": "operation@5"
+          "group": "copy@1"
         },
         {
           "command": "secondary-explorer.copyRelativePath",
           "when": "view == secondaryExplorerView",
-          "group": "operation@6"
+          "group": "copy@2"
+        },
+        {
+          "command": "secondary-explorer.copyToWorkspaceRoot",
+          "when": "view == secondaryExplorerView",
+          "group": "copy@3"
         },
         {
           "command": "secondary-explorer.renameEntry",
           "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
-          "group": "operation@7"
+          "group": "editing@1"
         },
         {
           "command": "secondary-explorer.deleteEntry",
           "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
-          "group": "operation@8"
+          "group": "editing@2"
         }
       ],
       "view/title": [
         {
-          "command": "secondary-explorer.createEntry",
+          "command": "secondary-explorer.createFile",
           "when": "view == secondaryExplorerView && secondaryExplorerHasSelection",
           "group": "navigation@1"
         },
         {
+          "command": "secondary-explorer.createFolder",
+          "when": "view == secondaryExplorerView && secondaryExplorerHasSelection",
+          "group": "navigation@2"
+        },
+        {
           "command": "secondary-explorer.pickPath",
           "when": "view == secondaryExplorerView",
-          "group": "navigation@2"
+          "group": "navigation@3"
         },
         {
           "command": "secondary-explorer.viewAsList",
@@ -427,7 +489,7 @@
     },
     "keybindings": [
       {
-        "command": "secondary-explorer.createEntry",
+        "command": "secondary-explorer.createFile",
         "key": "ctrl+n",
         "when": "focusedView == secondaryExplorerView && secondaryExplorerHasSelection"
       },
@@ -449,7 +511,7 @@
       {
         "command": "secondary-explorer.pasteEntry",
         "key": "ctrl+v",
-        "when": "focusedView == secondaryExplorerView && secondaryExplorerHasSelection && secondaryExplorerHasClipboard"
+        "when": "focusedView == secondaryExplorerView && secondaryExplorerHasSelection"
       },
       {
         "command": "secondary-explorer.renameEntry",
@@ -496,6 +558,7 @@
   "dependencies": {
     "fast-glob": "^3.3.3",
     "fs-extra": "^11.3.1",
-    "micromatch": "^4.0.8"
+    "micromatch": "^4.0.8",
+    "trash": "^10.1.0"
   }
 }

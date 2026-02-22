@@ -5,6 +5,17 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [6.0.0] - 2026-02-22
+
+- Added `secondaryExplorer.deleteBehavior` command that decides how the delete works.
+  -  `alwaysAsk` - Always ask before deleting (show confirmation dialog).
+  -  `recycleBin` - Move to recycle bin without asking. (Default)
+  -  `permanent` - Permanently delete without asking.
+- Added `Copy to Workspace Root` in secondary explorer context that helps us to copy the selected item into workspace root folder
+- Removed `New File/Folder` from secondary explorer context
+- Added `New File...` and `New Folder...` to secondary explorer context
+- Added `Add Folder to Workspace...` command helps to add the selected folder to the current workspace.
+  
 ## [5.0.3] - 2025-09-02
 
 - Fixed issues with "Open File" as preview.

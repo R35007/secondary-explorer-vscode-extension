@@ -36,6 +36,10 @@ export class Settings {
     Settings.setSettings('paths', paths);
   }
 
+  static get deleteBehavior() {
+    return (Settings.getSettings('deleteBehavior') as 'alwaysAsk' | 'recycleBin' | 'permanent') || 'recycleBin';
+  }
+
   static get parsedPaths() {
     const paths = Settings.paths;
     const workspaceFolders = vscode.workspace.workspaceFolders || [];

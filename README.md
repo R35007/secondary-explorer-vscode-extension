@@ -63,6 +63,8 @@ The extension activates automatically on startup and adds a new "Secondary Explo
 - **Open In Integrated Terminal**: Right-click any file or folder to open it in a VS Code Integrated Terminal.
 - **Open to the Side**: Right-click any file to open the file to the side.
 - **Open File**: Click or Enter to open files.
+- **Add Folder to Workspace**: Click or Enter to add the current folder to workspace.
+- **Copy to Workspace root**: Click or Enter to copy the current file or folder to workspace root folder.
 
 ### Keyboard Shortcuts
 
@@ -103,7 +105,8 @@ Configure folders to display via VS Code settings:
     "include": ["*.md", "*.txt"], // include: only file patterns
     "exclude": ["node_modules", "dist", "build", "out"] // exclude: file or folder patterns
   }
-]
+],
+"secondaryExplorer.deleteBehavior": "recycleBin" // "alwaysAsk" or "recycleBin" or "permanent"
 ```
 
 **Include/Exclude Logic:**

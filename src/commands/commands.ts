@@ -5,7 +5,8 @@ import { FSItem } from '../models/FSItem';
 import { SecondaryExplorerProvider } from '../providers/SecondaryExplorerProvider';
 import { isWindows, windowsInvalidName } from '../utils/constants';
 import { Settings } from '../utils/Settings';
-import { exists, existsAsync, getSelectedItems, sanitizeRelative, setContext, splitNameExt } from '../utils/utils';
+import { exists, existsAsync, getSelectedItems, sanitizeRelative, splitNameExt } from '../utils/utils';
+const trash = require('trash').default;
 
 export function registerCommands(context: vscode.ExtensionContext, provider: SecondaryExplorerProvider, treeView: vscode.TreeView<FSItem>) {
   // Clipboard state for cut/copy/paste
@@ -69,32 +70,22 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
     vscode.window.setStatusBarMessage('Path removed from Secondary Explorer', 1500);
   };
 
-  const createEntry = async (item?: FSItem) => {
+  const createFile = async (item?: FSItem) => {
     const treeViewItem = item || getSelectedItems(treeView).at(-1);
     if (!treeViewItem) return;
 
-    const basePath = treeViewItem.type === 'folder' ? treeViewItem.fullPath : path.dirname(treeViewItem?.fullPath);
-    // get the nearest rootPath
-    const nearestRootPath =
-      Settings.parsedPaths.find((p) => basePath.replace(/\\/g, '/').toLowerCase().startsWith(p.basePath.replace(/\\/g, '/').toLowerCase()))
-        ?.basePath || basePath;
-    const displayPath = path.relative(nearestRootPath, basePath)
-      ? `${path.basename(nearestRootPath)}/${path.relative(nearestRootPath, basePath)}`
-      : path.basename(nearestRootPath);
+    const basePath = treeViewItem.type === 'folder' ? treeViewItem.fullPath : path.dirname(treeViewItem.fullPath);
 
     const value = await vscode.window.showInputBox({
-      title: 'New File or Folder',
-      prompt: `Create in "${displayPath}"`,
-      placeHolder: 'Enter name or path (e.g. folder, folder/file.ext)',
+      title: 'New File',
+      prompt: `Create file in "${path.basename(basePath)}"`,
+      placeHolder: 'Enter file name or path (e.g. foo, bar/foo.md)',
       validateInput: async (raw: string) => {
         const input = raw.trim();
         if (!input) return 'Name is required';
         if (path.isAbsolute(input)) return 'Provide a relative path, not absolute';
-        const rel = sanitizeRelative(input);
-        const leaf = path.basename(rel);
-        if (isWindows && windowsInvalidName.test(leaf)) return 'Name contains invalid characters';
-        const target = path.resolve(basePath, rel);
-        if (await exists(target)) return 'File or folder already exists';
+        const target = path.resolve(basePath, sanitizeRelative(input));
+        if (await exists(target)) return 'File already exists';
         return undefined;
       },
     });
@@ -102,17 +93,47 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
 
     const rel = sanitizeRelative(value);
     const target = path.resolve(basePath, rel);
+
     try {
-      const leaf = path.basename(rel);
-      const isFile = !!path.extname(leaf) || (leaf.startsWith('.') && leaf.length > 1);
-      isFile ? await fsExtra.ensureFile(target) : await fsExtra.ensureDir(target);
-      if (isFile) {
-        const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(target));
-        await vscode.window.showTextDocument(doc);
-      }
+      await fsExtra.ensureDir(path.dirname(target)); // ensure parent folders
+      await fsExtra.ensureFile(target); // always create file
+      const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(target));
+      await vscode.window.showTextDocument(doc);
       provider.refresh();
     } catch (e) {
-      vscode.window.showErrorMessage('Failed to create entry: ' + String(e));
+      vscode.window.showErrorMessage('Failed to create file: ' + String(e));
+    }
+  };
+
+  const createFolder = async (item?: FSItem) => {
+    const treeViewItem = item || getSelectedItems(treeView).at(-1);
+    if (!treeViewItem) return;
+
+    const basePath = treeViewItem.type === 'folder' ? treeViewItem.fullPath : path.dirname(treeViewItem.fullPath);
+
+    const value = await vscode.window.showInputBox({
+      title: 'New Folder',
+      prompt: `Create folder in "${path.basename(basePath)}"`,
+      placeHolder: 'Enter folder name or path (e.g. foo, bar/foo.md)',
+      validateInput: async (raw: string) => {
+        const input = raw.trim();
+        if (!input) return 'Name is required';
+        if (path.isAbsolute(input)) return 'Provide a relative path, not absolute';
+        const target = path.resolve(basePath, sanitizeRelative(input));
+        if (await exists(target)) return 'Folder already exists';
+        return undefined;
+      },
+    });
+    if (!value) return;
+
+    const rel = sanitizeRelative(value);
+    const target = path.resolve(basePath, rel);
+
+    try {
+      await fsExtra.ensureDir(target); // always create folder
+      provider.refresh();
+    } catch (e) {
+      vscode.window.showErrorMessage('Failed to create folder: ' + String(e));
     }
   };
 
@@ -153,7 +174,6 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
 
   const cutEntry = async (item?: FSItem) => {
     const selectedItems = getSelectedItems(treeView);
-    setContext('secondaryExplorerHasClipboard', true);
     clipboard = { type: 'cut', items: selectedItems.length <= 1 && item ? [item] : selectedItems };
     vscode.window.setStatusBarMessage(`Cut!`, 1500);
   };
@@ -161,7 +181,6 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
   const copyEntry = async (item?: FSItem) => {
     const selectedItems = getSelectedItems(treeView);
     clipboard = { type: 'copy', items: selectedItems.length <= 1 && item ? [item] : selectedItems };
-    setContext('secondaryExplorerHasClipboard', true);
     vscode.window.setStatusBarMessage(`Copied!`, 1500);
   };
 
@@ -192,8 +211,8 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
 
     const oldPath = treeViewItem.fullPath;
     const parentDir = path.dirname(oldPath);
-    // Ensure label is a string
     const labelStr = typeof treeViewItem.label === 'string' ? treeViewItem.label : (treeViewItem.label?.label ?? '');
+
     const value = await vscode.window.showInputBox({
       title: 'Rename',
       prompt: `Rename "${labelStr}"`,
@@ -202,24 +221,55 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
         const name = input.trim();
         if (!name) return 'Name is required';
         if (isWindows && windowsInvalidName.test(name)) return 'Invalid characters in name';
-        const newPath = path.join(parentDir, name);
+
+        const newPath = path.resolve(parentDir, sanitizeRelative(name));
         if (newPath === oldPath) return undefined;
         if (await exists(newPath)) return 'Target already exists';
         return undefined;
       },
     });
     if (!value) return;
-    const newPath = path.join(parentDir, value.trim());
-    // Check if active editor is showing the file being renamed
-    const activeEditor = vscode.window.activeTextEditor;
-    const isActiveFile = activeEditor && activeEditor.document.uri.fsPath === oldPath;
+
+    const rel = sanitizeRelative(value.trim());
+    const newPath = path.resolve(parentDir, rel);
+
+    const isFolder = treeViewItem.type === 'folder';
+    const isFile = treeViewItem.type === 'file';
+
     try {
-      await fsExtra.move(oldPath, newPath, { overwrite: false });
-      provider.refresh();
-      if (isActiveFile) {
-        const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(newPath));
-        await vscode.window.showTextDocument(doc);
+      if (isFolder) {
+        // Check if nested rename (contains path separators)
+        const isNested = rel.includes(path.sep);
+
+        if (!isNested) {
+          // Simple folder rename
+          await fsExtra.move(oldPath, newPath, { overwrite: false });
+        } else {
+          // Nested folder rename
+          const contents = await fsExtra.readdir(oldPath);
+          if (contents.length > 0) {
+            // Folder not empty → do nothing
+            vscode.window.showWarningMessage(`Cannot rename "${labelStr}" into nested folders because it is not empty.`);
+            return;
+          }
+          // Folder empty → allow nested rename
+          await fsExtra.ensureDir(newPath);
+          await fsExtra.remove(oldPath);
+        }
+      } else if (isFile) {
+        // Always rename into a file
+        await fsExtra.ensureDir(path.dirname(newPath));
+        await fsExtra.move(oldPath, newPath, { overwrite: false });
+
+        // If active editor is showing the file, reopen
+        const activeEditor = vscode.window.activeTextEditor;
+        if (activeEditor && activeEditor.document.uri.fsPath === oldPath) {
+          const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(newPath));
+          await vscode.window.showTextDocument(doc);
+        }
       }
+
+      provider.refresh();
     } catch (e) {
       vscode.window.showErrorMessage('Rename failed: ' + String(e));
     }
@@ -229,13 +279,20 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
     const selectedItems = getSelectedItems(treeView);
     const itemsToDelete = selectedItems.length <= 1 && item ? [item] : selectedItems;
     if (itemsToDelete.length === 0) return;
+
     const names = itemsToDelete.map((s) => (typeof s.label === 'string' ? s.label : (s.label?.label ?? s.fullPath)));
-    const confirm = await vscode.window.showWarningMessage(
-      `Delete the following ${itemsToDelete.length > 1 ? 'items' : 'item'}?\n${names.join('\n')}`,
-      { modal: true },
-      'Delete',
-    );
-    if (confirm !== 'Delete') return;
+
+    let confirm: 'Delete (Move to Recycle Bin)' | 'Delete Permanently' | undefined = undefined;
+    if (Settings.deleteBehavior === 'alwaysAsk') {
+      confirm = await vscode.window.showWarningMessage(
+        `Delete the following ${itemsToDelete.length > 1 ? 'items' : 'item'}?\n${names.join('\n')}`,
+        { modal: true },
+        'Delete (Move to Recycle Bin)',
+        'Delete Permanently',
+      );
+
+      if (!confirm) return;
+    }
 
     const hasFolder = selectedItems.some((i) => i.type === 'folder');
     let showProgress = selectedItems.length > 1 || hasFolder;
@@ -244,12 +301,21 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
       let errorCount = 0;
       for (const [idx, s] of selectedItems.entries()) {
         try {
-          await fsExtra.remove(s.fullPath);
+          if (confirm === 'Delete Permanently' || Settings.deleteBehavior === 'permanent') {
+            // Permanently remove
+            await fsExtra.remove(s.fullPath);
+          } else {
+            // Move to system trash
+            const { default: trash } = await import('trash');
+            await trash([s.fullPath]);
+          }
         } catch (e) {
           errorCount++;
         }
         if (showProgress && progress) {
-          progress.report({ increment: Math.floor((100 * (idx + 1)) / selectedItems.length) });
+          progress.report({
+            increment: Math.floor((100 * (idx + 1)) / selectedItems.length),
+          });
         }
       }
       provider.refresh();
@@ -262,7 +328,7 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
       await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
-          title: 'Deleting',
+          title: confirm === 'Delete Permanently' ? 'Deleting Permanently' : 'Deleting',
           cancellable: false,
         },
         async (progress) => {
@@ -332,8 +398,88 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
       await doPaste();
     }
     clipboard = null;
-    setContext('secondaryExplorerHasClipboard', false);
     provider.refresh();
+  };
+
+  const copyToWorkspaceRoot = async (item?: FSItem) => {
+    const treeViewItem = item || getSelectedItems(treeView).at(-1);
+    if (!treeViewItem) {
+      vscode.window.showWarningMessage('No file or folder selected.');
+      return;
+    }
+
+    // Ensure there is an active workspace
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+      vscode.window.showWarningMessage('No active workspace folder found.');
+      return;
+    }
+
+    // Use the first workspace folder as the root
+    const rootPath = workspaceFolders[0].uri.fsPath;
+
+    const sourcePath = treeViewItem.fullPath;
+    const baseName = path.basename(sourcePath);
+    let destPath = path.join(rootPath, baseName);
+
+    // Handle name collisions by appending suffix
+    let fileIdx = 1;
+    while (await existsAsync(destPath)) {
+      const { name, ext } = splitNameExt(baseName);
+      destPath = path.join(rootPath, `${name}_${fileIdx}${ext}`);
+      fileIdx++;
+    }
+
+    try {
+      if (treeViewItem.type === 'folder') {
+        await fsExtra.copy(sourcePath, destPath);
+      } else {
+        await fsExtra.copyFile(sourcePath, destPath);
+      }
+      vscode.window.setStatusBarMessage(`Copied "${baseName}" to workspace root`, 2000);
+      provider.refresh();
+    } catch (e) {
+      vscode.window.showErrorMessage(`Failed to copy: ${String(e)}`);
+    }
+  };
+
+  const addSelectedToWorkspace = async (item?: FSItem) => {
+    const selectedItems = getSelectedItems(treeView);
+    // If multiple items are selected, pick the last one
+    const targetItem = selectedItems.length <= 1 && item ? item : selectedItems.at(-1);
+
+    if (!targetItem) {
+      vscode.window.showWarningMessage('No file or folder selected.');
+      return;
+    }
+
+    // If it's a file, use its parent folder
+    let folderPath: string;
+    if (targetItem.type === 'file') {
+      folderPath = path.dirname(targetItem.fullPath);
+    } else {
+      folderPath = targetItem.fullPath;
+    }
+
+    const folderUri = vscode.Uri.file(folderPath);
+
+    try {
+      // Prevent duplicates: check if already in workspace
+      const existing = vscode.workspace.workspaceFolders?.some((f) => f.uri.fsPath === folderUri.fsPath);
+      if (existing) {
+        vscode.window.showInformationMessage(`Folder "${path.basename(folderPath)}" is already part of the workspace.`);
+        return;
+      }
+
+      // Add folder to workspace
+      vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0, null, {
+        uri: folderUri,
+      });
+
+      vscode.window.setStatusBarMessage(`Added folder "${path.basename(folderPath)}" to workspace`, 2000);
+    } catch (e) {
+      vscode.window.showErrorMessage(`Failed to add folder: ${String(e)}`);
+    }
   };
 
   const commandCallbacks = {
@@ -347,7 +493,8 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
     openInTerminal,
     openFolderInNewWindow,
     removePath,
-    createEntry,
+    createFile,
+    createFolder,
     openFile,
     openToTheSide,
     cutEntry,
@@ -357,6 +504,8 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
     renameEntry,
     deleteEntry,
     pasteEntry,
+    copyToWorkspaceRoot,
+    addSelectedToWorkspace,
   };
 
   for (let [command, callback] of Object.entries(commandCallbacks)) {
