@@ -2,7 +2,7 @@
   "name": "secondary-explorer",
   "displayName": "Secondary Explorer",
   "description": "Adds a secondary explorer view to manage files and folders outside the default workspace explorer.",
-  "version": "6.0.0",
+  "version": "6.0.1",
   "icon": "images/logo.png",
   "publisher": "Thinker",
   "license": "MIT",
@@ -353,13 +353,13 @@
       "explorer/context": [
         {
           "command": "secondary-explorer.addToSecondaryExplorer",
-          "group": "navigation@1"
+          "group": "navigation@99"
         }
       ],
       "editor/title/context": [
         {
           "command": "secondary-explorer.addToSecondaryExplorer",
-          "group": "navigation@1"
+          "group": "navigation@99"
         }
       ],
       "view/item/context": [
@@ -367,11 +367,6 @@
           "command": "secondary-explorer.openFolderInNewWindow",
           "when": "view == secondaryExplorerView && viewItem == root",
           "group": "inline"
-        },
-        {
-          "command": "secondary-explorer.addSelectedToWorkspace",
-          "when": "view == secondaryExplorerView",
-          "group": "navigation@1"
         },
         {
           "command": "secondary-explorer.removePath",
@@ -402,6 +397,11 @@
           "command": "secondary-explorer.openFolderInNewWindow",
           "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
           "group": "navigation@7"
+        },
+        {
+          "command": "secondary-explorer.addSelectedToWorkspace",
+          "when": "view == secondaryExplorerView",
+          "group": "navigation@8"
         },
         {
           "command": "secondary-explorer.createFile",

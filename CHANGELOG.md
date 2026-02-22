@@ -7,6 +7,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [6.0.0] - 2026-02-22
 
+- Moved the `Add to Secondary Explorer` and `Add Folder to Workspace...` context menu to last in navigation group
+
+## [6.0.0] - 2026-02-22
+
 - Added `secondaryExplorer.deleteBehavior` command that decides how the delete works.
   -  `alwaysAsk` - Always ask before deleting (show confirmation dialog).
   -  `recycleBin` - Move to recycle bin without asking. (Default)
