@@ -6,6 +6,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { registerCommands } from './commands/commands';
 import { SecondaryExplorerProvider } from './providers/SecondaryExplorerProvider';
+import { registerPathWatchers } from './utils/registerPathWatchers';
 import { Settings } from './utils/Settings';
 import { setContext } from './utils/utils';
 
@@ -23,6 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(treeView);
 
   registerCommands(context, provider, treeView);
+  registerPathWatchers(context, provider, Settings.parsedPaths);
 
   // Dynamically set view title if only one folder
   function updateViewTitle() {
@@ -34,9 +36,13 @@ export function activate(context: vscode.ExtensionContext) {
       }
     }
     treeView.title = 'Secondary Explorer';
+    provider.refresh();
   }
+
   updateViewTitle();
   vscode.workspace.onDidChangeConfiguration((e) => {
+    // Re-register watchers if paths change, since the base paths might have changed
+    registerPathWatchers(context, provider, Settings.parsedPaths);
     if (e.affectsConfiguration('secondaryExplorer.paths')) {
       updateViewTitle();
     }

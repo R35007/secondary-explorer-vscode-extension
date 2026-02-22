@@ -37,7 +37,7 @@ export function isSubpath(base: string, target: string): boolean {
 }
 
 // Helps to convert template literal strings to applied values.
-export const interpolate = (format: string, object: object) => {
+export const interpolate = (format: string, object: object): string => {
   try {
     const keys = Object.keys(object);
     const values = Object.values(object);

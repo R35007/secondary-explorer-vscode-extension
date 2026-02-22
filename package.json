@@ -2,7 +2,7 @@
   "name": "secondary-explorer",
   "displayName": "Secondary Explorer",
   "description": "Adds a secondary explorer view to manage files and folders outside the default workspace explorer.",
-  "version": "6.0.1",
+  "version": "7.0.0",
   "icon": "images/logo.png",
   "publisher": "Thinker",
   "license": "MIT",
@@ -107,10 +107,100 @@
                     "description": "Optional name for this group. Defaults to folder name."
                   }
                 },
+                "examples": [
+                  "${workspaceFolder}",
+                  {
+                    "basePath": "${workspaceFolder}",
+                    "name": "All Workspace Files",
+                    "include": [
+                      "**/*"
+                    ],
+                    "exclude": [
+                      "node_modules",
+                      "dist",
+                      "build",
+                      "out",
+                      ".vscode-test"
+                    ]
+                  },
+                  {
+                    "basePath": "${workspaceFolder}",
+                    "name": "Workspace Docs",
+                    "include": [
+                      "**/*.{md,markdown,txt,rtf,adoc,asciidoc,restructuredtext,org,html,htm,pdf,docx,odt}"
+                    ],
+                    "exclude": [
+                      "node_modules",
+                      "dist",
+                      "build",
+                      "out",
+                      ".vscode-test"
+                    ]
+                  },
+                  {
+                    "basePath": "${workspaceFolder}",
+                    "name": "Workspace Images",
+                    "include": [
+                      "**/*.{png,jpg,jpeg,gif,svg,webp,avif,bmp,tiff,ico,icns,heic,heif}"
+                    ],
+                    "exclude": [
+                      "node_modules",
+                      "dist",
+                      "build",
+                      "out",
+                      ".vscode-test"
+                    ]
+                  }
+                ],
                 "additionalProperties": false
               }
             ]
           },
+          "examples": [
+            "${workspaceFolder}",
+            {
+              "basePath": "${workspaceFolder}",
+              "name": "All Workspace Files",
+              "include": [
+                "**/*"
+              ],
+              "exclude": [
+                "node_modules",
+                "dist",
+                "build",
+                "out",
+                ".vscode-test"
+              ]
+            },
+            {
+              "basePath": "${workspaceFolder}",
+              "name": "Workspace Docs",
+              "include": [
+                "**/*.{md,markdown,txt,rtf,adoc,asciidoc,restructuredtext,org,html,htm,pdf,docx,odt}"
+              ],
+              "exclude": [
+                "node_modules",
+                "dist",
+                "build",
+                "out",
+                ".vscode-test"
+              ]
+            },
+            {
+              "basePath": "${workspaceFolder}",
+              "name": "Workspace Images",
+              "include": [
+                "**/*.{png,jpg,jpeg,gif,svg,webp,avif,bmp,tiff,ico,icns,heic,heif}"
+              ],
+              "exclude": [
+                "node_modules",
+                "dist",
+                "build",
+                "out",
+                ".vscode-test"
+              ]
+            }
+          ],
           "default": []
         },
         "secondaryExplorer.deleteBehavior": {
@@ -530,23 +620,17 @@
     "compile": "webpack",
     "watch": "webpack --watch",
     "package": "webpack --mode production --devtool hidden-source-map",
-    "compile-tests": "tsc -p . --outDir out",
-    "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "lint": "eslint src",
-    "format": "prettier --write .",
-    "test": "vscode-test"
+    "format": "prettier --write ."
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
     "@types/micromatch": "^4.0.9",
-    "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "@types/vscode": "^1.100.0",
-    "@typescript-eslint/eslint-plugin": "^8.39.0",
-    "@vscode/test-cli": "^0.0.11",
-    "@vscode/test-electron": "^2.5.2",
-    "eslint": "^9.32.0",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "eslint": "^10.0.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "prettier": "^3.6.2",

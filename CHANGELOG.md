@@ -5,6 +5,14 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [7.0.0] - 2026-02-22
+
+- Automatically refresh the secondary explorer tree when there is any modification in the path
+- Allowed relative paths. The paths will be relative t the first workspace folder
+- Added more variables. `${workspaceFolder}`, `${workspaceFolder: Folder Name}/notes`, `${workspaceFolderName}`, `${workspaceFolderBasename}`, `${userHome: Folder Name}/paths`
+- persist clipboard path even after paste
+- Fixed: Missing basePath defaults to workspace folder
+  
 ## [6.0.0] - 2026-02-22
 
 - Moved the `Add to Secondary Explorer` and `Add Folder to Workspace...` context menu to last in navigation group

@@ -87,27 +87,83 @@ You can also toggle the view mode from the view title toolbar:
 ## Configuration
 
 
-Configure folders to display via VS Code settings:
+Configure folders to display via VS Code settings. Multi-root workspaces are supported—use `${workspaceFolder}` to target every root folder, or `${workspaceFolder:FolderName}` to target a specific one (matching either the workspace folder name or its basename). You can also use `${workspaceFolderName}`, and `${workspaceFolderBasename}` inside `name` values for dynamic labels.
 
 ```jsonc
 // settings.json
 "secondaryExplorer.paths": [
-  // Simple string paths (support ${workspaceFolder} and ${userHome})
   "${workspaceFolder}/docs",
+  "${workspaceFolder:Docs}/guides",
+
   "${userHome}/notes",
+  "${userHome: Notes}/notes",
+  
   "C:/path/to/folder",
   "C:/path/to/folder/file.txt",
-
   // Or rich objects with filtering and custom name
   {
     "basePath": "${workspaceFolder}",
-    "name": "Workspace",
+    "name": "${workspaceFolderName} - Docs",
     "include": ["*.md", "*.txt"], // include: only file patterns
     "exclude": ["node_modules", "dist", "build", "out"] // exclude: file or folder patterns
   }
 ],
 "secondaryExplorer.deleteBehavior": "recycleBin" // "alwaysAsk" or "recycleBin" or "permanent"
 ```
+
+
+Example configuration:
+
+```jsonc
+{
+  "secondaryExplorer.paths": [
+    {
+      "basePath": "${workspaceFolder}",
+      "name": "All Workspace Files",
+      "include": [
+        "**/*"
+      ],
+      "exclude": [
+        "node_modules",
+        "dist",
+        "build",
+        "out",
+        ".vscode-test"
+      ]
+    },
+    {
+      "basePath": "${workspaceFolder}",
+      "name": "Workspace Docs",
+      "include": [
+        "**/*.{md,markdown,txt,rtf,adoc,asciidoc,restructuredtext,org,html,htm,pdf,docx,odt}"
+      ],
+      "exclude": [
+        "node_modules",
+        "dist",
+        "build",
+        "out",
+        ".vscode-test"
+      ]
+    },
+    {
+      "basePath": "${workspaceFolder}",
+      "name": "Workspace Images",
+      "include": [
+        "**/*.{png,jpg,jpeg,gif,svg,webp,avif,bmp,tiff,ico,icns,heic,heif}"
+      ],
+      "exclude": [
+        "node_modules",
+        "dist",
+        "build",
+        "out",
+        ".vscode-test"
+      ]
+    },
+  ],
+}
+
+```
+
 
 **Include/Exclude Logic:**
 - `exclude` always takes priority over `include`.
@@ -118,7 +174,7 @@ Configure folders to display via VS Code settings:
 **Workspace-level configuration recommended.**
 
 Notes:
-- Paths must be absolute and exist on disk to render.
+- Paths can be absolute or relative (`.`, `..`, `sub/folder`). Relative entries are resolved against each workspace folder, and paths must exist on disk to render.
 - Include/Exclude accept glob patterns; include is applied to files, and folders are expanded only if children match include.
 - Variable interpolation is supported in string and object forms: ${workspaceFolder}, ${userHome}.
 

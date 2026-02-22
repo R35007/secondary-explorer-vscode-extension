@@ -140,15 +140,27 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
   const openFile = async (item?: FSItem) => {
     const selectedFiles = getSelectedItems(treeView).filter((i) => i.type === 'file');
     const filesToOpen = selectedFiles.length <= 1 && item ? (item.type === 'file' ? [item] : []) : selectedFiles;
+
     if (!filesToOpen.length) return;
-    // Open each file
-    for (let fileItem of filesToOpen) {
-      const uri = vscode.Uri.file(fileItem.fullPath);
-      await vscode.commands.executeCommand('vscode.open', uri, {
-        preview: filesToOpen.length === 1,
-        preserveFocus: true,
-      });
-    }
+
+    // Batch open with Promise.allSettled
+    const results = await Promise.allSettled(
+      filesToOpen.map((fileItem) => {
+        const uri = vscode.Uri.file(fileItem.fullPath);
+        return vscode.commands.executeCommand('vscode.open', uri, {
+          preview: filesToOpen.length === 1,
+          preserveFocus: true,
+        });
+      }),
+    );
+
+    // Handle failures gracefully
+    results.forEach((res, idx) => {
+      if (res.status === 'rejected') {
+        console.error(`Failed to open: ${filesToOpen[idx].fullPath}`, res.reason);
+      }
+    });
+
     try {
       item && (await treeView.reveal(item, { select: true, focus: true }));
     } catch {}
@@ -157,16 +169,28 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
   const openToTheSide = async (item?: FSItem) => {
     const selectedFiles = getSelectedItems(treeView).filter((i) => i.type === 'file');
     const filesToOpen = selectedFiles.length <= 1 && item ? (item.type === 'file' ? [item] : []) : selectedFiles;
+
     if (!filesToOpen.length) return;
-    // Open each file
-    for (let fileItem of filesToOpen) {
-      const uri = vscode.Uri.file(fileItem.fullPath);
-      await vscode.commands.executeCommand('vscode.open', uri, {
-        viewColumn: vscode.ViewColumn.Beside,
-        preview: filesToOpen.length === 1,
-        preserveFocus: true,
-      });
-    }
+
+    // Batch open with Promise.allSettled
+    const results = await Promise.allSettled(
+      filesToOpen.map((fileItem) => {
+        const uri = vscode.Uri.file(fileItem.fullPath);
+        return vscode.commands.executeCommand('vscode.open', uri, {
+          viewColumn: vscode.ViewColumn.Beside,
+          preview: filesToOpen.length === 1,
+          preserveFocus: true,
+        });
+      }),
+    );
+
+    // Handle failures gracefully
+    results.forEach((res, idx) => {
+      if (res.status === 'rejected') {
+        console.error(`Failed to open: ${filesToOpen[idx].fullPath}`, res.reason);
+      }
+    });
+
     try {
       item && (await treeView.reveal(item, { select: true, focus: true }));
     } catch {}
@@ -397,7 +421,6 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
     } else {
       await doPaste();
     }
-    clipboard = null;
     provider.refresh();
   };
 
