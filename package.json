@@ -2,7 +2,7 @@
   "name": "secondary-explorer",
   "displayName": "Secondary Explorer",
   "description": "Adds a secondary explorer view to manage files and folders outside the default workspace explorer.",
-  "version": "7.0.0",
+  "version": "8.0.0",
   "icon": "images/logo.png",
   "publisher": "Thinker",
   "license": "MIT",
@@ -49,6 +49,7 @@
       "title": "Secondary Explorer",
       "properties": {
         "secondaryExplorer.paths": {
+          "order": 1,
           "type": "array",
           "description": "List of groups to show in Secondary Explorer. Each item can be a string path or an object with baseFolder, pattern(s), ignorepattern(s), and title.",
           "items": {
@@ -204,6 +205,7 @@
           "default": []
         },
         "secondaryExplorer.deleteBehavior": {
+          "order": 2,
           "type": "string",
           "enum": [
             "alwaysAsk",
@@ -217,6 +219,39 @@
           ],
           "default": "recycleBin",
           "description": "Controls how delete operations are handled."
+        },
+        "secondaryExplorer.rootPathSortOrder": {
+          "order": 3,
+          "type": "string",
+          "enum": [
+            "default",
+            "filesFirst",
+            "foldersFirst",
+            "mixed"
+          ],
+          "enumDescriptions": [
+            "Default sorting order (sorted by secondaryExplorer.paths order).",
+            "Files are shown before folders, all sorted alphabetically.",
+            "Folders are shown before files, all sorted alphabetically.",
+            "Mixed sorting order (folders and files mixed based on name, sorted alphabetically)."
+          ],
+          "default": "default",
+          "description": "Controls the sorting order of items in the explorer."
+        },
+        "secondaryExplorer.itemsSortOrderPattern": {
+          "order": 4,
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "additionalItems": true,
+          "default": [
+            "*.instructions.md",
+            "*.prompt.md",
+            "*.agent.md",
+            "*.chatmode.md"
+          ],
+          "description": "Controls the sorting order of items in the explorer."
         }
       }
     },
@@ -225,7 +260,9 @@
         {
           "id": "secondaryExplorerView",
           "name": "Secondary Explorer",
-          "icon": "./images/explorer-icon.svg"
+          "contextualTitle": "Secondary Explorer",
+          "visibility": "visible",
+          "icon": "$(folder)"
         }
       ]
     },
@@ -357,6 +394,10 @@
       "commandPalette": [
         {
           "command": "secondary-explorer.refresh",
+          "when": "false"
+        },
+        {
+          "command": "secondary-explorer.addToSecondaryExplorer",
           "when": "false"
         },
         {
@@ -546,34 +587,39 @@
       ],
       "view/title": [
         {
-          "command": "secondary-explorer.createFile",
-          "when": "view == secondaryExplorerView && secondaryExplorerHasSelection",
-          "group": "navigation@1"
-        },
-        {
-          "command": "secondary-explorer.createFolder",
-          "when": "view == secondaryExplorerView && secondaryExplorerHasSelection",
-          "group": "navigation@2"
-        },
-        {
           "command": "secondary-explorer.pickPath",
           "when": "view == secondaryExplorerView",
-          "group": "navigation@3"
+          "group": "secondaryExplorer@1"
         },
         {
           "command": "secondary-explorer.viewAsList",
           "when": "view == secondaryExplorerView && !secondaryExplorerRootViewAsList",
-          "group": "navigation@4"
+          "group": "secondaryExplorer@2"
         },
         {
           "command": "secondary-explorer.viewAsTree",
           "when": "view == secondaryExplorerView && secondaryExplorerRootViewAsList",
-          "group": "navigation@5"
+          "group": "secondaryExplorer@3"
+        },
+        {
+          "command": "secondary-explorer.openSettings",
+          "when": "view == secondaryExplorerView",
+          "group": "secondaryExplorer@4"
+        },
+        {
+          "command": "secondary-explorer.createFile",
+          "when": "view == secondaryExplorerView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "secondary-explorer.createFolder",
+          "when": "view == secondaryExplorerView",
+          "group": "navigation@2"
         },
         {
           "command": "secondary-explorer.refresh",
           "when": "view == secondaryExplorerView",
-          "group": "navigation@6"
+          "group": "navigation@4"
         }
       ]
     },

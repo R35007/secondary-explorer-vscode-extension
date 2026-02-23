@@ -39,6 +39,12 @@ export class Settings {
   static get deleteBehavior() {
     return (Settings.getSettings('deleteBehavior') as 'alwaysAsk' | 'recycleBin' | 'permanent') || 'recycleBin';
   }
+  static get rootPathSortOrder() {
+    return (Settings.getSettings('rootPathSortOrder') as 'default' | 'filesFirst' | 'foldersFirst') || 'default';
+  }
+  static get itemsSortOrderPattern() {
+    return (Settings.getSettings('itemsSortOrderPattern') as string[]) || [];
+  }
 
   static get parsedPaths() {
     const paths = Settings.paths;

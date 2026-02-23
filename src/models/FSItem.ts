@@ -1,3 +1,5 @@
+import * as fsx from 'fs-extra';
+import * as path from 'path';
 import * as vscode from 'vscode';
 
 export class FSItem extends vscode.TreeItem {
@@ -6,16 +8,13 @@ export class FSItem extends vscode.TreeItem {
   type: 'file' | 'folder';
   include: string[] | undefined;
   exclude: string[] | undefined;
-  constructor(
-    label: string,
-    fullPath: string,
-    isFile: boolean,
-    isRoot: boolean,
-    include?: string[],
-    exclude?: string[],
-    index: number = -1,
-  ) {
-    super(label, !isFile ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None);
+  constructor(fullPath: string, name?: string, include?: string[], exclude?: string[], isRoot?: boolean, index: number = -1) {
+    const itemLabel = name || path.basename(fullPath);
+    const isFile = fsx.statSync(fullPath).isFile();
+    const collapsibleState = isFile ? vscode.TreeItemCollapsibleState.None : vscode.TreeItemCollapsibleState.Collapsed;
+
+    super(itemLabel, collapsibleState);
+
     this.fullPath = fullPath;
     this.rootIndex = index;
     this.contextValue = isRoot ? 'root' : isFile ? 'file' : 'folder';

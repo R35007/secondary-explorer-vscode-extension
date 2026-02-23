@@ -1,9 +1,20 @@
-
 # Change Log
 
 All notable changes to the "secondary-explorer" extension will be documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+
+## [8.0.0] - 2026-02-23
+
+- Added `secondaryExplorer.rootPathSortOrder`. Helps to sort root tree item by
+  - `Default` - sorted by `secondaryExplorer.paths` order
+  - `Files` - Files are shown before folders, all sorted alphabetically
+  - `filesFirst` - Folders are shown before files, all sorted alphabetically
+  - `mixed` - Mixed sorting order (folders and files mixed based on name, sorted alphabetically)
+- Added `secondaryExplorer.itemsSortOrderPattern`. Helps to sort folder items by pattern
+  - Defaults to `[ "*.instructions.md", "*.prompt.md", "*.agent.md", "*.chatmode.md" ]`
+- Improved view title menus
+- Changed Secondary Explorer view icon
 
 ## [7.0.0] - 2026-02-22
 
@@ -12,7 +23,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - Added more variables. `${workspaceFolder}`, `${workspaceFolder: Folder Name}/notes`, `${workspaceFolderName}`, `${workspaceFolderBasename}`, `${userHome: Folder Name}/paths`
 - persist clipboard path even after paste
 - Fixed: Missing basePath defaults to workspace folder
-  
+
 ## [6.0.0] - 2026-02-22
 
 - Moved the `Add to Secondary Explorer` and `Add Folder to Workspace...` context menu to last in navigation group
@@ -20,14 +31,14 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## [6.0.0] - 2026-02-22
 
 - Added `secondaryExplorer.deleteBehavior` command that decides how the delete works.
-  -  `alwaysAsk` - Always ask before deleting (show confirmation dialog).
-  -  `recycleBin` - Move to recycle bin without asking. (Default)
-  -  `permanent` - Permanently delete without asking.
+  - `alwaysAsk` - Always ask before deleting (show confirmation dialog).
+  - `recycleBin` - Move to recycle bin without asking. (Default)
+  - `permanent` - Permanently delete without asking.
 - Added `Copy to Workspace Root` in secondary explorer context that helps us to copy the selected item into workspace root folder
 - Removed `New File/Folder` from secondary explorer context
 - Added `New File...` and `New Folder...` to secondary explorer context
 - Added `Add Folder to Workspace...` command helps to add the selected folder to the current workspace.
-  
+
 ## [5.0.3] - 2025-09-02
 
 - Fixed issues with "Open File" as preview.
@@ -45,12 +56,12 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [5.0.1] - 2025-08-31
 
- - Improved clipboard logic for cut/copy/paste actions and context key updates
- - Fixed error handling for file/folder creation, renaming, and deletion
- - Enhanced keyboard navigation and focus management for explorer actions
- - Improved progress bar logic for bulk operations (delete/paste)
- - Reduced unnecessary refreshes for better performance
- - Updated command registration for accessibility and reliability
+- Improved clipboard logic for cut/copy/paste actions and context key updates
+- Fixed error handling for file/folder creation, renaming, and deletion
+- Enhanced keyboard navigation and focus management for explorer actions
+- Improved progress bar logic for bulk operations (delete/paste)
+- Reduced unnecessary refreshes for better performance
+- Updated command registration for accessibility and reliability
 
 ## [5.0.0] - 2025-08-30
 
@@ -61,7 +72,6 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - Improvement: Dynamic view title when a single root is configured (uses configured name or folder name)
 - New: "Add to Secondary Explorer" command in default explorer/editor to quickly add paths
 - Internal: Settings refactor, fast-glob based list mode, and refined context keys/menus for view mode
-
 
 ## [4.0.0] - 2025-08-27
 

@@ -17,7 +17,7 @@
 - 📁 **Secondary Explorer View**: Manage files and folders in a dedicated sidebar.
 - 🗂️ **Multi-Folder Support**: Display and organize multiple local folders.
 - 🔀 **Tree/List Toggle**: Switch between hierarchical tree and flat list views.
--  **File & Folder Operations**: Create, view, rename, delete files/folders.
+- **File & Folder Operations**: Create, view, rename, delete files/folders.
 - 🔎 **Pattern Filtering**: Filter files/folders per root using include/exclude glob patterns (e.g., show only Markdown files: `*.md`).
 - ✂️ **Cut, Copy, Paste**: Move or duplicate files/folders.
 - 🗂️ **Multi-Selection Support**: Supports Multi file or folder selection for Cut, Copy, Paste and Delete operations.
@@ -86,7 +86,6 @@ You can also toggle the view mode from the view title toolbar:
 
 ## Configuration
 
-
 Configure folders to display via VS Code settings. Multi-root workspaces are supported—use `${workspaceFolder}` to target every root folder, or `${workspaceFolder:FolderName}` to target a specific one (matching either the workspace folder name or its basename). You can also use `${workspaceFolderName}`, and `${workspaceFolderBasename}` inside `name` values for dynamic labels.
 
 ```jsonc
@@ -97,7 +96,7 @@ Configure folders to display via VS Code settings. Multi-root workspaces are sup
 
   "${userHome}/notes",
   "${userHome: Notes}/notes",
-  
+
   "C:/path/to/folder",
   "C:/path/to/folder/file.txt",
   // Or rich objects with filtering and custom name
@@ -108,9 +107,15 @@ Configure folders to display via VS Code settings. Multi-root workspaces are sup
     "exclude": ["node_modules", "dist", "build", "out"] // exclude: file or folder patterns
   }
 ],
-"secondaryExplorer.deleteBehavior": "recycleBin" // "alwaysAsk" or "recycleBin" or "permanent"
+"secondaryExplorer.deleteBehavior": "recycleBin", // "alwaysAsk" or "recycleBin" or "permanent"
+"secondaryExplorer.rootPathSortOrder": "default", // "default" or "filesFirst" or "foldersFirst" or "mixed"
+"secondaryExplorer.itemsSortOrderPattern": [
+  "*.instructions.md",
+  "*.prompt.md",
+  "*.agent.md",
+  "*.chatmode.md"
+],
 ```
-
 
 Example configuration:
 
@@ -120,52 +125,30 @@ Example configuration:
     {
       "basePath": "${workspaceFolder}",
       "name": "All Workspace Files",
-      "include": [
-        "**/*"
-      ],
-      "exclude": [
-        "node_modules",
-        "dist",
-        "build",
-        "out",
-        ".vscode-test"
-      ]
+      "include": ["**/*"],
+      "exclude": ["node_modules", "dist", "build", "out", ".vscode-test"],
     },
     {
       "basePath": "${workspaceFolder}",
-      "name": "Workspace Docs",
-      "include": [
-        "**/*.{md,markdown,txt,rtf,adoc,asciidoc,restructuredtext,org,html,htm,pdf,docx,odt}"
-      ],
-      "exclude": [
-        "node_modules",
-        "dist",
-        "build",
-        "out",
-        ".vscode-test"
-      ]
+      "name": "${WorkspaceFolderName} Docs",
+      "include": ["**/*.{md,markdown,txt,rtf,adoc,asciidoc,restructuredtext,org,html,htm,pdf,docx,odt}"],
+      "exclude": ["node_modules", "dist", "build", "out", ".vscode-test"],
     },
     {
       "basePath": "${workspaceFolder}",
       "name": "Workspace Images",
-      "include": [
-        "**/*.{png,jpg,jpeg,gif,svg,webp,avif,bmp,tiff,ico,icns,heic,heif}"
-      ],
-      "exclude": [
-        "node_modules",
-        "dist",
-        "build",
-        "out",
-        ".vscode-test"
-      ]
+      "include": ["**/*.{png,jpg,jpeg,gif,svg,webp,avif,bmp,tiff,ico,icns,heic,heif}"],
+      "exclude": ["node_modules", "dist", "build", "out", ".vscode-test"],
     },
   ],
+  "secondaryExplorer.deleteBehavior": "alwaysAsk",
+  "secondaryExplorer.rootPathSortOrder": "foldersFirst",
+  "secondaryExplorer.itemsSortOrderPattern": ["*.instructions.md", "*.prompt.md", "*.agent.md", "*.chatmode.md"],
 }
-
 ```
 
-
 **Include/Exclude Logic:**
+
 - `exclude` always takes priority over `include`.
 - `include` accepts only file patterns (e.g., `*.md`).
 - `exclude` accepts both file and folder patterns (e.g., `node_modules`, `*.log`).
@@ -174,6 +157,7 @@ Example configuration:
 **Workspace-level configuration recommended.**
 
 Notes:
+
 - Paths can be absolute or relative (`.`, `..`, `sub/folder`). Relative entries are resolved against each workspace folder, and paths must exist on disk to render.
 - Include/Exclude accept glob patterns; include is applied to files, and folders are expanded only if children match include.
 - Variable interpolation is supported in string and object forms: ${workspaceFolder}, ${userHome}.

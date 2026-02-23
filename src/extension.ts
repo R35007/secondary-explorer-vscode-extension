@@ -36,16 +36,15 @@ export function activate(context: vscode.ExtensionContext) {
       }
     }
     treeView.title = 'Secondary Explorer';
-    provider.refresh();
   }
 
   updateViewTitle();
   vscode.workspace.onDidChangeConfiguration((e) => {
-    // Re-register watchers if paths change, since the base paths might have changed
-    registerPathWatchers(context, provider, Settings.parsedPaths);
     if (e.affectsConfiguration('secondaryExplorer.paths')) {
+      registerPathWatchers(context, provider, Settings.parsedPaths);
       updateViewTitle();
     }
+    provider.refresh();
   });
 
   context.subscriptions.push(treeView.onDidChangeVisibility((e) => provider.refresh()));

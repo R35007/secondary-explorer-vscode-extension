@@ -71,14 +71,23 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
   };
 
   const createFile = async (item?: FSItem) => {
-    const treeViewItem = item || getSelectedItems(treeView).at(-1);
-    if (!treeViewItem) return;
+    const selectedItem = item || getSelectedItems(treeView).at(-1);
+
+    const isSingleRoot = provider.explorerPaths.length === 1;
+    const pathObj = provider.explorerPaths[0];
+
+    if (!selectedItem && !isSingleRoot)
+      return vscode.window.showWarningMessage('Please select a file or folder to create a new file inside');
+
+    const treeViewItem =
+      !selectedItem && isSingleRoot ? new FSItem(pathObj.basePath, pathObj.name, pathObj.exclude, pathObj.include, true) : selectedItem;
+
+    if (!treeViewItem) return vscode.window.showWarningMessage('Please select a file or folder to create a new file inside');
 
     const basePath = treeViewItem.type === 'folder' ? treeViewItem.fullPath : path.dirname(treeViewItem.fullPath);
 
     const value = await vscode.window.showInputBox({
-      title: 'New File',
-      prompt: `Create file in "${path.basename(basePath)}"`,
+      title: `Create file in "${path.basename(basePath)}" Folder`,
       placeHolder: 'Enter file name or path (e.g. foo, bar/foo.md)',
       validateInput: async (raw: string) => {
         const input = raw.trim();
@@ -106,14 +115,23 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
   };
 
   const createFolder = async (item?: FSItem) => {
-    const treeViewItem = item || getSelectedItems(treeView).at(-1);
-    if (!treeViewItem) return;
+    const selectedItem = item || getSelectedItems(treeView).at(-1);
+
+    const isSingleRoot = provider.explorerPaths.length === 1;
+    const pathObj = provider.explorerPaths[0];
+
+    if (!selectedItem && !isSingleRoot)
+      return vscode.window.showWarningMessage('Please select a file or folder to create a new file inside');
+
+    const treeViewItem =
+      !selectedItem && isSingleRoot ? new FSItem(pathObj.basePath, pathObj.name, pathObj.exclude, pathObj.include, true) : selectedItem;
+
+    if (!treeViewItem) return vscode.window.showWarningMessage('Please select a file or folder to create a new file inside');
 
     const basePath = treeViewItem.type === 'folder' ? treeViewItem.fullPath : path.dirname(treeViewItem.fullPath);
 
     const value = await vscode.window.showInputBox({
-      title: 'New Folder',
-      prompt: `Create folder in "${path.basename(basePath)}"`,
+      title: `Create folder in "${path.basename(basePath)}" folder`,
       placeHolder: 'Enter folder name or path (e.g. foo, bar/foo.md)',
       validateInput: async (raw: string) => {
         const input = raw.trim();
@@ -238,8 +256,7 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
     const labelStr = typeof treeViewItem.label === 'string' ? treeViewItem.label : (treeViewItem.label?.label ?? '');
 
     const value = await vscode.window.showInputBox({
-      title: 'Rename',
-      prompt: `Rename "${labelStr}"`,
+      title: `Rename "${labelStr}"`,
       value: labelStr,
       validateInput: async (input) => {
         const name = input.trim();
@@ -509,7 +526,7 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
     viewAsList: () => provider.toggleListView?.(),
     viewAsTree: () => provider.toggleListView?.(),
     refresh: () => provider.refresh?.(),
-    openSettings: () => vscode.commands.executeCommand('workbench.action.openSettings', 'secondaryExplorer'),
+    openSettings: () => vscode.commands.executeCommand('workbench.action.openSettings', ' @ext:thinker.secondary-explorer '),
     revealInFileExplorer: (item: FSItem) => vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(item.fullPath)),
     addToSecondaryExplorer,
     pickPath,
