@@ -25,6 +25,8 @@
 - 🪟 **Open Folder in New Window**: Open any folder in a new VS Code window.
 - 🖉 **Improved Rename**: Renaming a folder updates open editors.
 - 🔄 **Quick Actions**: Refresh, open settings, and perform file operations.
+- 🗂️ **Copy to Workspace Root**: Copy folder from secondary explorer to workspace root folder
+- 🗂️ **Add Folder to Workspace**: Add selected folder to workspace
 - 🗑️ **Remove Folder**: Remove a configured root folder (does not delete from disk).
 - 🧭 **Quick Add**: Add selection to Secondary Explorer from the default explorer/editor context menu.
 
@@ -37,10 +39,6 @@
 1. Open the Extensions view in VS Code (`Ctrl+Shift+X`).
 2. Search for `Secondary Explorer`.
 3. Click **Install**.
-
-### Activation
-
-The extension activates automatically on startup and adds a new "Secondary Explorer" view to the sidebar.
 
 ---
 
@@ -103,6 +101,7 @@ Configure folders to display via VS Code settings. Multi-root workspaces are sup
   {
     "basePath": "${workspaceFolder}",
     "name": "${workspaceFolderName} - Docs",
+    "hidden": false, // if true it hides the folder
     "include": ["*.md", "*.txt"], // include: only file patterns
     "exclude": ["node_modules", "dist", "build", "out"] // exclude: file or folder patterns
   }
@@ -125,22 +124,33 @@ Example configuration:
     {
       "basePath": "${workspaceFolder}",
       "name": "All Workspace Files",
+      "hidden": false,
       "include": ["**/*"],
       "exclude": ["node_modules", "dist", "build", "out", ".vscode-test"],
     },
     {
-      "basePath": "${workspaceFolder}",
+      "basePath": "${userHome}/repo",
       "name": "${WorkspaceFolderName} Docs",
+      "hidden": false,
       "include": ["**/*.{md,markdown,txt,rtf,adoc,asciidoc,restructuredtext,org,html,htm,pdf,docx,odt}"],
-      "exclude": ["node_modules", "dist", "build", "out", ".vscode-test"],
+      // "exclude": ["node_modules", "dist", "build", "out"], // Default excludes
     },
     {
       "basePath": "${workspaceFolder}",
       "name": "Workspace Images",
+      "hidden": false,
       "include": ["**/*.{png,jpg,jpeg,gif,svg,webp,avif,bmp,tiff,ico,icns,heic,heif}"],
-      "exclude": ["node_modules", "dist", "build", "out", ".vscode-test"],
+      "exclude": [], // overriding Default excludes.
+    },
+    {
+      "basePath": "${workspaceFolder}",
+      "name": "Workspace Tests",
+      "hidden": false,
+      "include": ["*.test.{js,ts,tsx,jsx}", "*.spec.{js,ts,tsx,jsx}"],
+      // "exclude": ["node_modules", "dist", "build", "out"] // Default excludes
     },
   ],
+  "secondaryExplorer.showEmptyDirectories": false, // if true it shows the empty directories
   "secondaryExplorer.deleteBehavior": "alwaysAsk",
   "secondaryExplorer.rootPathSortOrder": "foldersFirst",
   "secondaryExplorer.itemsSortOrderPattern": ["*.instructions.md", "*.prompt.md", "*.agent.md", "*.chatmode.md"],
@@ -152,11 +162,11 @@ Example configuration:
 - `exclude` always takes priority over `include`.
 - `include` accepts only file patterns (e.g., `*.md`).
 - `exclude` accepts both file and folder patterns (e.g., `node_modules`, `*.log`).
-- For example: If you set `include: ["*.md"]` and `exclude: ["node_modules"]`, all Markdown files inside `node_modules` will be excluded from the tree view, even if they match the include pattern.
+  - By default it exclude `["node_modules", "dist", "build", "out"]`. Set empty list `[]` to include all of these in the tree.
+
+> If you set `include: ["*.md"]` and `exclude: ["node_modules"]`, all Markdown files inside `node_modules` will be excluded from the tree view, even if they match the include pattern.
 
 **Workspace-level configuration recommended.**
-
-Notes:
 
 - Paths can be absolute or relative (`.`, `..`, `sub/folder`). Relative entries are resolved against each workspace folder, and paths must exist on disk to render.
 - Include/Exclude accept glob patterns; include is applied to files, and folders are expanded only if children match include.
@@ -164,11 +174,10 @@ Notes:
 
 ---
 
-## Acknowledgements
+<div align="center">
 
-Built by [Sivaraman](mailto:sendmsg2siva@gmail.com) — MIT License.
+**Happy Coding! 🚀**
 
----
+Made with ❤️ by [Sivaraman](https://github.com/R35007)
 
-> **TIP**
-> For more details, see the [CHANGELOG.md](CHANGELOG.md) and [LICENSE.md](LICENSE.md) files.
+</div>

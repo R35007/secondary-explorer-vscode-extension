@@ -62,6 +62,10 @@
                 "properties": {
                   "basePath": {
                     "type": "string",
+                    "default": "${workspaceFolder}",
+                    "examples": [
+                      "${workspaceFolder}"
+                    ],
                     "markdownDescription": "Base folder path. Supports ${workspaceFolder} and ${userHome}. If omitted, uses current workspace folder."
                   },
                   "include": {
@@ -79,6 +83,15 @@
                           "type": "string"
                         }
                       }
+                    ],
+                    "examples": [
+                      [
+                        "**/*.{md,markdown,txt}"
+                      ],
+                      [
+                        "*.test.{js,ts}",
+                        "*.spec.{js,ts}"
+                      ]
                     ],
                     "markdownDescription": "Glob pattern(s) to include. Examples: *.md. Defaults to *"
                   },
@@ -101,11 +114,28 @@
                         }
                       }
                     ],
+                    "examples": [
+                      [
+                        "node_modules",
+                        "dist",
+                        "build",
+                        "out"
+                      ]
+                    ],
                     "markdownDescription": "Glob pattern(s) to ignore or exclude. Defaults to node_modules, dist, build, out"
                   },
                   "name": {
                     "type": "string",
+                    "examples": [
+                      "${workspaceFolderName}",
+                      "${workspaceFolderBasename}"
+                    ],
                     "description": "Optional name for this group. Defaults to folder name."
+                  },
+                  "hidden": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether this group is initially hidden in the explorer."
                   }
                 },
                 "examples": [
@@ -113,6 +143,7 @@
                   {
                     "basePath": "${workspaceFolder}",
                     "name": "All Workspace Files",
+                    "hidden": false,
                     "include": [
                       "**/*"
                     ],
@@ -127,29 +158,26 @@
                   {
                     "basePath": "${workspaceFolder}",
                     "name": "Workspace Docs",
+                    "hidden": false,
                     "include": [
                       "**/*.{md,markdown,txt,rtf,adoc,asciidoc,restructuredtext,org,html,htm,pdf,docx,odt}"
-                    ],
-                    "exclude": [
-                      "node_modules",
-                      "dist",
-                      "build",
-                      "out",
-                      ".vscode-test"
+                    ]
+                  },
+                  {
+                    "basePath": "${userHome}/mac/path/to/images",
+                    "name": "Workspace Images",
+                    "hidden": false,
+                    "include": [
+                      "**/*.{png,jpg,jpeg,gif,svg,webp,avif,bmp,tiff,ico,icns,heic,heif}"
                     ]
                   },
                   {
                     "basePath": "${workspaceFolder}",
-                    "name": "Workspace Images",
+                    "name": "Workspace Tests",
+                    "hidden": false,
                     "include": [
-                      "**/*.{png,jpg,jpeg,gif,svg,webp,avif,bmp,tiff,ico,icns,heic,heif}"
-                    ],
-                    "exclude": [
-                      "node_modules",
-                      "dist",
-                      "build",
-                      "out",
-                      ".vscode-test"
+                      "*.test.{js,ts,tsx,jsx}",
+                      "*.spec.{js,ts,tsx,jsx}"
                     ]
                   }
                 ],
@@ -220,8 +248,14 @@
           "default": "recycleBin",
           "description": "Controls how delete operations are handled."
         },
-        "secondaryExplorer.rootPathSortOrder": {
+        "secondaryExplorer.showEmptyDirectories": {
           "order": 3,
+          "type": "boolean",
+          "default": false,
+          "description": "Set to true to show empty directories in the explorer. By default, empty directories are hidden to reduce clutter."
+        },
+        "secondaryExplorer.rootPathSortOrder": {
+          "order": 4,
           "type": "string",
           "enum": [
             "default",
@@ -239,7 +273,7 @@
           "description": "Controls the sorting order of items in the explorer."
         },
         "secondaryExplorer.itemsSortOrderPattern": {
-          "order": 4,
+          "order": 5,
           "type": "array",
           "items": {
             "type": "string"
@@ -255,8 +289,17 @@
         }
       }
     },
+    "viewsContainers": {
+      "secondarySidebar": [
+        {
+          "id": "secondaryExplorer",
+          "title": "Secondary Explorer",
+          "icon": "images/logo.png"
+        }
+      ]
+    },
     "views": {
-      "explorer": [
+      "secondaryExplorer": [
         {
           "id": "secondaryExplorerView",
           "name": "Secondary Explorer",

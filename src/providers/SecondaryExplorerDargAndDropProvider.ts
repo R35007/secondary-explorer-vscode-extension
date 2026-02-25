@@ -37,42 +37,61 @@ export class SecondaryExplorerDragAndDrop implements vscode.TreeDragAndDropContr
         return;
       }
 
-      // Show progress with cancel support
-      await vscode.window.withProgress(
-        {
-          location: vscode.ProgressLocation.Notification,
-          title: 'Moving files...',
-          cancellable: true,
-        },
-        async (progress, cancelToken) => {
-          const total = draggedPaths.length;
-          let count = 0;
+      const hasFolder = draggedPaths.some((i) => fs.statSync(i).isDirectory());
+      const isSameDir = draggedPaths.every((p) => path.dirname(p) === targetDir);
 
-          for (const filePath of draggedPaths) {
-            if (cancelToken.isCancellationRequested) {
-              vscode.window.showInformationMessage('File move cancelled.');
-              break;
-            }
+      if (isSameDir) return; // No need to move if all items are already in the target directory
 
-            try {
-              const fileName = path.basename(filePath);
-              const newPath = path.join(targetDir, fileName);
+      const showProgress = draggedPaths.length > 1 || hasFolder;
 
-              if (await fs.pathExists(newPath)) {
-                vscode.window.showWarningMessage(`File already exists: ${newPath}`);
-                continue;
-              }
+      const moveFiles = async (progress?: vscode.Progress<unknown>, cancelToken?: vscode.CancellationToken) => {
+        const total = draggedPaths.length;
+        let count = 0;
 
-              await fs.move(filePath, newPath, { overwrite: false });
-            } catch (err) {
-              vscode.window.showErrorMessage(`Failed to move ${filePath}: ${String(err)}`);
-            }
-
-            count++;
-            progress.report({ increment: (count / total) * 100, message: `${count}/${total} moved` });
+        for (const filePath of draggedPaths) {
+          if (cancelToken?.isCancellationRequested) {
+            vscode.window.showInformationMessage('File move cancelled.');
+            break;
           }
-        },
-      );
+
+          try {
+            const fileName = path.basename(filePath);
+            const newPath = path.join(targetDir, fileName);
+
+            if (path.dirname(filePath) === targetDir) {
+              continue; // Skip if source and target are the same
+            }
+
+            if (await fs.pathExists(newPath)) {
+              vscode.window.showWarningMessage(`File already exists: ${newPath}`);
+              continue;
+            }
+
+            await fs.move(filePath, newPath, { overwrite: false });
+          } catch (err) {
+            vscode.window.showErrorMessage(`Failed to move ${filePath}: ${String(err)}`);
+          }
+
+          count++;
+          progress?.report({ increment: (count / total) * 100, message: `${count}/${total} moved` });
+        }
+      };
+
+      if (showProgress) {
+        // Show progress with cancel support
+        await vscode.window.withProgress(
+          {
+            location: vscode.ProgressLocation.Notification,
+            title: 'Moving files...',
+            cancellable: true,
+          },
+          async (progress, cancelToken) => {
+            await moveFiles(progress, cancelToken);
+          },
+        );
+      } else {
+        await moveFiles();
+      }
 
       this.provider.refresh();
       return;

@@ -4,6 +4,13 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [9.0.1] - 2026-02-25
+
+- Fixed Drag and drop to same folder shows progress. Now we wont show progress for drag and drop on same folder
+- Fixed cache issue
+- Added `hidden` prop to the `secondaryExplorer.paths` configuration. If true it hides the folder from tree.
+- Added - `secondaryExplorer.showEmptyDirectories`. If `true` it shows the empty directories. Defaults to `false`
+
 ## [9.0.0] - 2026-02-25
 
 - Added drag and drop feature. Now we can move files within folder and also able to move within editor to open the file

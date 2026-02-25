@@ -8,6 +8,7 @@ type UserPaths = {
   name?: string;
   include?: string | string[];
   exclude?: string | string[];
+  hidden?: boolean;
 };
 
 export type NormalizedPaths = {
@@ -15,6 +16,7 @@ export type NormalizedPaths = {
   name: string;
   include?: string[];
   exclude?: string[];
+  hidden?: boolean;
 };
 
 export class Settings {
@@ -35,7 +37,9 @@ export class Settings {
   static set paths(paths: Array<string | UserPaths>) {
     Settings.setSettings('paths', paths);
   }
-
+  static get showEmptyDirectories() {
+    return Settings.getSettings('showEmptyDirectories') as boolean;
+  }
   static get deleteBehavior() {
     return (Settings.getSettings('deleteBehavior') as 'alwaysAsk' | 'recycleBin' | 'permanent') || 'recycleBin';
   }
@@ -85,6 +89,7 @@ export class Settings {
       const basePath = interpolate(variable?.replace(/\\/g, '/') || '${workspaceFolder}', interpolateObject);
       const resolvedBasePath = path.resolve(interpolateObject.workspaceFolder, basePath); // resolve with workspace folder to support multiple folders
       return {
+        ...p,
         basePath: resolvedBasePath,
         name: interpolate(p.name || folderName || path.basename(resolvedBasePath), interpolateObject),
         include: getFormattedPatternPaths(([] as string[]).concat(p.include || defaultInclude)),
@@ -93,7 +98,7 @@ export class Settings {
     });
 
     // filter only valid and exist baseFolders
-    const filtered = normalized.filter((p) => p.basePath && path.isAbsolute(p.basePath) && fsx.existsSync(p.basePath));
+    const filtered = normalized.filter((p) => p.basePath && path.isAbsolute(p.basePath) && fsx.existsSync(p.basePath) && !p.hidden);
     return filtered;
   }
 }
