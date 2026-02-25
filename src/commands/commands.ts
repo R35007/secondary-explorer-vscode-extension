@@ -336,11 +336,16 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
     }
 
     const hasFolder = selectedItems.some((i) => i.type === 'folder');
-    let showProgress = selectedItems.length > 1 || hasFolder;
+    const showProgress = selectedItems.length > 1 || hasFolder;
 
-    const doDelete = async (progress?: vscode.Progress<unknown>) => {
+    const doDelete = async (progress?: vscode.Progress<unknown>, cancelToken?: vscode.CancellationToken) => {
       let errorCount = 0;
       for (const [idx, s] of selectedItems.entries()) {
+        if (cancelToken?.isCancellationRequested) {
+          vscode.window.showInformationMessage('Delete operation cancelled.');
+          break;
+        }
+
         try {
           if (confirm === 'Delete Permanently' || Settings.deleteBehavior === 'permanent') {
             // Permanently remove
@@ -353,12 +358,15 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
         } catch (e) {
           errorCount++;
         }
+
         if (showProgress && progress) {
           progress.report({
             increment: Math.floor((100 * (idx + 1)) / selectedItems.length),
+            message: `${idx + 1}/${selectedItems.length} deleted`,
           });
         }
       }
+
       provider.refresh();
       if (errorCount > 0) {
         vscode.window.showErrorMessage(`Failed to delete ${errorCount} item(s).`);
@@ -370,10 +378,10 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
         {
           location: vscode.ProgressLocation.Notification,
           title: confirm === 'Delete Permanently' ? 'Deleting Permanently' : 'Deleting',
-          cancellable: false,
+          cancellable: true,
         },
-        async (progress) => {
-          await doDelete(progress);
+        async (progress, cancelToken) => {
+          await doDelete(progress, cancelToken);
         },
       );
     } else {
@@ -397,18 +405,26 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
     if (!itemsToCopy.length) return;
 
     const hasFolder = itemsToCopy.some((i) => i.type === 'folder');
-    let showProgress = itemsToCopy.length > 1 || hasFolder;
+    const showProgress = itemsToCopy.length > 1 || hasFolder;
 
-    const doPaste = async (progress?: vscode.Progress<unknown>) => {
+    const doPaste = async (progress?: vscode.Progress<unknown>, cancelToken?: vscode.CancellationToken) => {
+      let errorCount = 0;
       for (const [idx, item] of itemsToCopy.entries()) {
+        if (cancelToken?.isCancellationRequested) {
+          vscode.window.showInformationMessage('Paste operation cancelled.');
+          break;
+        }
+
         const baseName = path.basename(item.fullPath);
         let newPath = path.join(destPath, baseName);
         let fileIdx = 1;
+
         while (await existsAsync(newPath)) {
           const { name, ext } = splitNameExt(baseName);
           newPath = path.join(destPath, `${name}_${fileIdx}${ext}`);
           fileIdx++;
         }
+
         try {
           if (clipboard?.type === 'copy') {
             await fsExtra.copy(item.fullPath, newPath);
@@ -416,11 +432,21 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
             await fsExtra.move(item.fullPath, newPath, { overwrite: false });
           }
         } catch (e) {
+          errorCount++;
           vscode.window.showErrorMessage(`Paste failed: ${String(e)}`);
         }
+
         if (showProgress && progress) {
-          progress.report({ increment: Math.floor((100 * (idx + 1)) / itemsToCopy.length) });
+          progress.report({
+            increment: Math.floor(((idx + 1) / itemsToCopy.length) * 100),
+            message: `${idx + 1}/${itemsToCopy.length} processed`,
+          });
         }
+      }
+
+      provider.refresh();
+      if (errorCount > 0) {
+        vscode.window.showErrorMessage(`Failed to paste ${errorCount} item(s).`);
       }
     };
 
@@ -429,16 +455,15 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
         {
           location: vscode.ProgressLocation.Notification,
           title: clipboard && clipboard.type === 'copy' ? 'Copying' : 'Pasting',
-          cancellable: false,
+          cancellable: true,
         },
-        async (progress) => {
-          await doPaste(progress);
+        async (progress, cancelToken) => {
+          await doPaste(progress, cancelToken);
         },
       );
     } else {
       await doPaste();
     }
-    provider.refresh();
   };
 
   const copyToWorkspaceRoot = async (item?: FSItem) => {

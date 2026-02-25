@@ -3,7 +3,6 @@ import * as fs from 'fs-extra';
 import micromatch from 'micromatch';
 import * as path from 'path';
 import * as vscode from 'vscode';
-
 import { FSItem } from '../models/FSItem';
 import { NormalizedPaths, Settings } from '../utils/Settings';
 import { safePromise, setContext } from '../utils/utils';
@@ -13,10 +12,14 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
   readonly onDidChangeTreeData: vscode.Event<FSItem | undefined | void> = this._onDidChangeTreeData.event;
 
   public explorerPaths: NormalizedPaths[] = [];
-  private shouldViewAsList: boolean = false;
+  private shouldViewAsList = false;
+
+  // Cache for directory listings
+  private cache = new Map<string, FSItem[]>();
 
   constructor(private context: vscode.ExtensionContext) {
     this.loadPaths();
+
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (
         e.affectsConfiguration('secondaryExplorer.paths') ||
@@ -27,14 +30,28 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
         this.refresh();
       }
     });
+
+    // File system watcher to invalidate cache
+    const watcher = vscode.workspace.createFileSystemWatcher('**/*');
+    watcher.onDidCreate((uri) => this.invalidateCache(uri.fsPath));
+    watcher.onDidDelete((uri) => this.invalidateCache(uri.fsPath));
+    watcher.onDidChange((uri) => this.invalidateCache(uri.fsPath));
+  }
+
+  private invalidateCache(fullPath: string) {
+    const dir = path.dirname(fullPath);
+    this.cache.delete(dir);
+    this.cache.delete(fullPath);
+    this.refresh();
   }
 
   loadPaths() {
     this.explorerPaths = Settings.parsedPaths;
   }
 
-  refresh(): void {
-    this._onDidChangeTreeData.fire();
+  refresh(element?: FSItem): void {
+    if (!element) this.cache.clear(); // Clear cache on full refresh
+    this._onDidChangeTreeData.fire(element);
   }
 
   toggleListView(): void {
@@ -43,11 +60,15 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
     this.refresh();
   }
 
-  getTreeItem(element: FSItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
+  getTreeItem(element: FSItem): vscode.TreeItem {
+    element.type === 'folder'
+      ? (element.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed)
+      : (element.collapsibleState = vscode.TreeItemCollapsibleState.None);
+
     return element;
   }
 
-  private getSortedItemsByPattern = (items: FSItem[]) => {
+  private getSortedItemsByPattern(items: FSItem[]) {
     const hasPatterns = Array.isArray(Settings.itemsSortOrderPattern) && Settings.itemsSortOrderPattern.length > 0;
 
     const rank = (label: string) => {
@@ -75,7 +96,7 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
       const bn = String(b.label).toLocaleLowerCase();
       return an < bn ? -1 : an > bn ? 1 : 0;
     });
-  };
+  }
 
   private getRootSortedItems = (items: FSItem[]) => {
     return items.sort((a, b) => {
@@ -93,38 +114,42 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
     });
   };
 
-  getAllFilesInDirectory = async (dir: string, include: string[] = ['**/*'], exclude?: string[]) => {
-    const matchedFiles = await fg.glob(include, { cwd: dir, ignore: exclude, onlyFiles: true, dot: true });
-
-    return matchedFiles.map((file) => path.resolve(dir, file)).map((filePath) => new FSItem(filePath));
-  };
-
-  getChildrenItems = async (base: string, include?: string[], exclude?: string[]) => {
-    if (this.shouldViewAsList) return await this.getAllFilesInDirectory(base, include, exclude);
-
-    const names = await fs.readdir(base);
-    const items: FSItem[] = [];
-    for (const label of names) {
-      const fullPath = path.join(base, label);
-      const [pathStats, error] = await safePromise(fs.stat(fullPath));
-      if (error) continue;
-      // continue if path or file matches exclude patterns or doesn't match include patterns
-      if (exclude?.length && micromatch.isMatch(fullPath, exclude, { dot: true })) continue;
-      if (pathStats.isFile() && include?.length && !micromatch.isMatch(fullPath, include, { dot: true })) continue;
-      if (
-        pathStats.isDirectory() &&
-        (include?.length || exclude?.length) &&
-        !(await this.getChildrenItems(fullPath, include, exclude)).length
-      ) {
-        continue;
-      }
-
-      items.push(new FSItem(fullPath, label, include, exclude));
+  private async getChildrenItems(base: string, include?: string[], exclude?: string[]) {
+    // Use cache if available
+    if (this.cache.has(base)) {
+      return this.cache.get(base)!;
     }
-    return this.getSortedItemsByPattern(items);
-  };
 
-  renderSingleRoot = async () => {
+    let items: FSItem[] = [];
+
+    if (this.shouldViewAsList) {
+      const matchedFiles = await fg.glob(include ?? ['**/*'], {
+        cwd: base,
+        ignore: exclude,
+        onlyFiles: true,
+        dot: true,
+      });
+      items = matchedFiles.map((file) => new FSItem(path.resolve(base, file)));
+    } else {
+      const names = await fs.readdir(base);
+      for (const label of names) {
+        const fullPath = path.join(base, label);
+        const [pathStats, error] = await safePromise(fs.stat(fullPath));
+        if (error) continue;
+        // continue if path or file matches exclude patterns or doesn't match include patterns
+        if (exclude?.length && micromatch.isMatch(fullPath, exclude, { dot: true })) continue;
+        if (pathStats.isFile() && include?.length && !micromatch.isMatch(fullPath, include, { dot: true })) continue;
+
+        items.push(new FSItem(fullPath, label, include, exclude));
+      }
+    }
+
+    const sorted = this.getSortedItemsByPattern(items);
+    this.cache.set(base, sorted);
+    return sorted;
+  }
+
+  private async renderSingleRoot() {
     const pathObj = this.explorerPaths[0];
     const stat = await fs.stat(pathObj.basePath);
 
@@ -134,20 +159,20 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
     }
     // isFile = true, isRoot = true
 
-    return await this.getChildrenItems(pathObj.basePath, pathObj.include, pathObj.exclude); // Show only the children of the root folder
-  };
+    return await this.getChildrenItems(pathObj.basePath, pathObj.include, pathObj.exclude);
+  }
 
-  renderRootItems = async () => {
+  private async renderRootItems() {
     if (this.explorerPaths.length === 1) return await this.renderSingleRoot();
     // Multiple valid paths: show each as root (file or folder)
     const items: FSItem[] = [];
     for (const [index, pathObj] of this.explorerPaths.entries()) {
       const [stat, error] = await safePromise(fs.stat(pathObj.basePath));
       if (error) continue;
-      items.push(new FSItem(pathObj.basePath, pathObj.name, pathObj.include, pathObj.exclude, true, index)); // isRoot = true, pass index
+      items.push(new FSItem(pathObj.basePath, pathObj.name, pathObj.include, pathObj.exclude, true, index));
     }
     return Settings.rootPathSortOrder === 'default' ? items : this.getRootSortedItems(items);
-  };
+  }
 
   async getChildren(element?: FSItem): Promise<FSItem[]> {
     try {
@@ -156,7 +181,7 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
       const stat = await fs.stat(full);
       if (stat.isDirectory()) return await this.getChildrenItems(full, element.include, element.exclude);
       return [];
-    } catch (e) {
+    } catch {
       return [];
     }
   }

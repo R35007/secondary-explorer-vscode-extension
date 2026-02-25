@@ -5,6 +5,7 @@ import * as fsx from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { registerCommands } from './commands/commands';
+import { SecondaryExplorerDragAndDrop } from './providers/SecondaryExplorerDargAndDropProvider';
 import { SecondaryExplorerProvider } from './providers/SecondaryExplorerProvider';
 import { registerPathWatchers } from './utils/registerPathWatchers';
 import { Settings } from './utils/Settings';
@@ -20,6 +21,7 @@ export function activate(context: vscode.ExtensionContext) {
     treeDataProvider: provider,
     showCollapseAll: true,
     canSelectMany: true,
+    dragAndDropController: new SecondaryExplorerDragAndDrop(provider),
   });
   context.subscriptions.push(treeView);
 
@@ -47,7 +49,6 @@ export function activate(context: vscode.ExtensionContext) {
     provider.refresh();
   });
 
-  context.subscriptions.push(treeView.onDidChangeVisibility((e) => provider.refresh()));
   context.subscriptions.push(treeView.onDidChangeSelection((e) => setContext('secondaryExplorerHasSelection', e.selection.length > 0)));
 }
 

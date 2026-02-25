@@ -4,6 +4,11 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [9.0.0] - 2026-02-25
+
+- Added drag and drop feature. Now we can move files within folder and also able to move within editor to open the file
+- Added cache handling for more performance
+
 ## [8.0.0] - 2026-02-23
 
 - Added `secondaryExplorer.rootPathSortOrder`. Helps to sort root tree item by
