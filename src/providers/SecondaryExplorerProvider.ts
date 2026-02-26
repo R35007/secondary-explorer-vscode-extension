@@ -99,35 +99,53 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
   };
 
   private async getChildrenItems(base: string, include?: string[], exclude?: string[]) {
+    // If list view, ignore hierarchy and show all matching files
     if (this.#shouldViewAsList) {
       const matchedFiles = await fg.glob(include ?? ['**/*'], { cwd: base, ignore: exclude, onlyFiles: true, dot: true });
       const items = matchedFiles.map((file) => new FSItem(path.resolve(base, file)));
       return this.getSortedItemsByPattern(items);
-    } else {
-      const names = await fs.readdir(base);
-      let items: FSItem[] = [];
-      for (const label of names) {
-        const fullPath = path.join(base, label);
-        const [pathStats, error] = await safePromise(fs.stat(fullPath));
-
-        if (error) continue;
-        // continue if path or file matches exclude patterns or doesn't match include patterns
-        if (exclude?.length && micromatch.isMatch(fullPath, exclude, { dot: true })) continue;
-        if (pathStats.isFile() && include?.length && !micromatch.isMatch(fullPath, include, { dot: true })) continue;
-
-        if (
-          !Settings.showEmptyDirectories &&
-          pathStats.isDirectory() &&
-          (include?.length || exclude?.length) &&
-          !(await this.getChildrenItems(fullPath, include, exclude)).length
-        ) {
-          continue;
-        }
-
-        items.push(new FSItem(fullPath, label, include, exclude));
-      }
-      return this.getSortedItemsByPattern(items);
     }
+
+    // immediate children (files + dirs)
+    const children = await fg(['*'], {
+      cwd: base,
+      dot: true,
+      onlyFiles: false,
+      deep: 1,
+      absolute: true,
+      ignore: exclude ?? [],
+    });
+
+    const items: FSItem[] = [];
+
+    for (const child of children) {
+      const [stats, error] = await safePromise(fs.stat(child));
+
+      if (error) continue;
+
+      // exclude priority (already applied, but double-check)
+      if (exclude?.length && micromatch.isMatch(child, exclude, { dot: true })) continue;
+      if (stats.isFile() && include?.length && !micromatch.isMatch(child, include, { dot: true })) continue;
+
+      const shouldCheckNested = !Settings.showEmptyDirectories && stats.isDirectory() && (include?.length || exclude?.length);
+
+      if (shouldCheckNested) {
+        // keep dir only if it contains at least one matching file
+        const nestedMatches = await fg(include ?? ['**/*'], {
+          cwd: child,
+          dot: true,
+          onlyFiles: true,
+          absolute: true,
+          ignore: exclude ?? [],
+        });
+
+        if (nestedMatches.length === 0) continue;
+      }
+
+      items.push(new FSItem(child, path.basename(child), include, exclude));
+    }
+
+    return this.getSortedItemsByPattern(items);
   }
 
   private async renderSingleRoot() {

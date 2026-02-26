@@ -2,6 +2,7 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { FSItem } from '../models/FSItem';
+import { normalizePath } from '../utils/utils';
 import { SecondaryExplorerProvider } from './SecondaryExplorerProvider';
 
 export class SecondaryExplorerDragAndDrop implements vscode.TreeDragAndDropController<FSItem> {
@@ -11,108 +12,136 @@ export class SecondaryExplorerDragAndDrop implements vscode.TreeDragAndDropContr
 
   constructor(private provider: SecondaryExplorerProvider) {}
 
+  /**
+   * Handles drag events by storing dragged item paths
+   * in both tree-specific and URI formats so they can
+   * be recognized by the explorer and editor.
+   */
   async handleDrag(source: readonly FSItem[], treeDataTransfer: vscode.DataTransfer, token: vscode.CancellationToken) {
-    // Store full paths of dragged items
     treeDataTransfer.set('application/vnd.code.tree.secondaryExplorerView', new vscode.DataTransferItem(source.map((s) => s.fullPath)));
 
-    // Also set text/uri-list so editor can recognize drops
     const uris = source.map((s) => vscode.Uri.file(s.fullPath).toString()).join('\n');
     treeDataTransfer.set('text/uri-list', new vscode.DataTransferItem(uris));
   }
 
+  /**
+   * Resolves the correct target directory for a drop.
+   * If the target is a file, returns its parent folder.
+   * If inaccessible, returns null and shows an error.
+   */
+  private async resolveTargetDir(target: FSItem): Promise<string | null> {
+    try {
+      const stat = await fs.stat(target.fullPath);
+      return stat.isDirectory() ? target.fullPath : path.dirname(target.fullPath);
+    } catch (err) {
+      vscode.window.showErrorMessage(`Target not accessible: ${String(err)}`);
+      return null;
+    }
+  }
+
+  private isSameOrSubDir(source: string, targetDir: string): boolean {
+    const isSameDir = fs.statSync(source).isDirectory()
+      ? normalizePath(source) === normalizePath(targetDir)
+      : normalizePath(path.dirname(source)) === normalizePath(targetDir);
+    const isSubDirMove = normalizePath(targetDir).startsWith(normalizePath(source + path.sep));
+    return isSameDir || isSubDirMove;
+  }
+
+  /**
+   * Moves a single file or folder into the target directory.
+   * Skips no-op cases: same directory, moving into own folder/subdir,
+   * or if the destination already exists. Reports progress.
+   */
+  private async moveItem(filePath: string, targetDir: string, progress?: vscode.Progress<unknown>, cancelToken?: vscode.CancellationToken) {
+    if (cancelToken?.isCancellationRequested) return;
+
+    try {
+      const fileName = path.basename(filePath);
+      const newPath = path.join(targetDir, fileName);
+
+      // Prevent moving a directory into itself or its subdirectories
+      if (this.isSameOrSubDir(filePath, targetDir)) return;
+
+      // Skip if file already exists in target
+      if (await fs.pathExists(newPath)) {
+        vscode.window.showWarningMessage(`File already exists: ${newPath}`);
+        return;
+      }
+
+      await fs.move(filePath, newPath, { overwrite: false });
+      progress?.report({ message: `Moved: ${fileName}` });
+    } catch (err) {
+      vscode.window.showErrorMessage(`Failed to move ${filePath}: ${String(err)}`);
+    }
+  }
+
+  /**
+   * Runs the move operation for multiple dragged paths.
+   * Shows progress if multiple items or folders are involved.
+   * Reports incremental progress as items are moved.
+   */
+  private async runMove(draggedPaths: string[], targetDir: string, showProgress: boolean) {
+    const runner = async (progress?: vscode.Progress<unknown>, cancelToken?: vscode.CancellationToken) => {
+      const total = draggedPaths.length;
+      let count = 0;
+
+      for (const filePath of draggedPaths) {
+        await this.moveItem(filePath, targetDir, progress, cancelToken);
+        count++;
+        progress?.report({ increment: (count / total) * 100, message: `${count}/${total} moved` });
+      }
+    };
+
+    if (showProgress) {
+      await vscode.window.withProgress(
+        { location: vscode.ProgressLocation.Notification, title: 'Moving files...', cancellable: true },
+        runner,
+      );
+    } else {
+      await runner();
+    }
+  }
+
+  /**
+   * Opens dropped URIs directly in the editor.
+   * Supports opening beside the current editor if no target is provided.
+   */
+  private async openDroppedUris(uriItem: vscode.DataTransferItem, target?: FSItem) {
+    const uris: string[] = uriItem.value.split('\n').filter(Boolean);
+    for (const uriStr of uris) {
+      const uri = vscode.Uri.parse(uriStr);
+      const activeEditor = vscode.window.activeTextEditor;
+      const column = activeEditor ? activeEditor.viewColumn : vscode.ViewColumn.One;
+      const openBeside = target === undefined;
+      await vscode.window.showTextDocument(uri, { viewColumn: openBeside ? vscode.ViewColumn.Beside : column, preview: false });
+    }
+  }
+
+  /**
+   * Main drop handler. Decides whether the drop is a move
+   * within the explorer or an open action in the editor.
+   * Delegates actual work to helper functions for clarity.
+   */
   async handleDrop(target: FSItem | undefined, dataTransfer: vscode.DataTransfer, token: vscode.CancellationToken) {
     const treeItem = dataTransfer.get('application/vnd.code.tree.secondaryExplorerView');
     if (treeItem && target) {
       const draggedPaths: string[] = treeItem.value;
-
-      let targetDir = target.fullPath;
-      try {
-        const targetStat = await fs.stat(target.fullPath);
-        if (!targetStat.isDirectory()) {
-          // If target is a file, use its parent folder
-          targetDir = path.dirname(target.fullPath);
-        }
-      } catch (err) {
-        vscode.window.showErrorMessage(`Target not accessible: ${String(err)}`);
-        return;
-      }
+      const targetDir = await this.resolveTargetDir(target);
+      if (!targetDir) return;
 
       const hasFolder = draggedPaths.some((i) => fs.statSync(i).isDirectory());
-      const isSameDir = draggedPaths.every((p) => path.dirname(p) === targetDir);
-
-      if (isSameDir) return; // No need to move if all items are already in the target directory
+      const isSameOrSubDir = draggedPaths.every((p) => this.isSameOrSubDir(p, targetDir));
+      if (isSameOrSubDir) return;
 
       const showProgress = draggedPaths.length > 1 || hasFolder;
-
-      const moveFiles = async (progress?: vscode.Progress<unknown>, cancelToken?: vscode.CancellationToken) => {
-        const total = draggedPaths.length;
-        let count = 0;
-
-        for (const filePath of draggedPaths) {
-          if (cancelToken?.isCancellationRequested) {
-            vscode.window.showInformationMessage('File move cancelled.');
-            break;
-          }
-
-          try {
-            const fileName = path.basename(filePath);
-            const newPath = path.join(targetDir, fileName);
-
-            if (path.dirname(filePath) === targetDir) {
-              continue; // Skip if source and target are the same
-            }
-
-            if (await fs.pathExists(newPath)) {
-              vscode.window.showWarningMessage(`File already exists: ${newPath}`);
-              continue;
-            }
-
-            await fs.move(filePath, newPath, { overwrite: false });
-          } catch (err) {
-            vscode.window.showErrorMessage(`Failed to move ${filePath}: ${String(err)}`);
-          }
-
-          count++;
-          progress?.report({ increment: (count / total) * 100, message: `${count}/${total} moved` });
-        }
-      };
-
-      if (showProgress) {
-        // Show progress with cancel support
-        await vscode.window.withProgress(
-          {
-            location: vscode.ProgressLocation.Notification,
-            title: 'Moving files...',
-            cancellable: true,
-          },
-          async (progress, cancelToken) => {
-            await moveFiles(progress, cancelToken);
-          },
-        );
-      } else {
-        await moveFiles();
-      }
-
+      await this.runMove(draggedPaths, targetDir, showProgress);
       this.provider.refresh();
       return;
     }
 
-    // Case 2: Drop into editor → open file(s)
     const uriItem = dataTransfer.get('text/uri-list');
     if (uriItem) {
-      const uris: string[] = uriItem.value.split('\n').filter(Boolean);
-      for (const uriStr of uris) {
-        const uri = vscode.Uri.parse(uriStr);
-
-        const activeEditor = vscode.window.activeTextEditor;
-        const column = activeEditor ? activeEditor.viewColumn : vscode.ViewColumn.One;
-
-        const openBeside = target === undefined;
-        await vscode.window.showTextDocument(uri, {
-          viewColumn: openBeside ? vscode.ViewColumn.Beside : column,
-          preview: false,
-        });
-      }
+      await this.openDroppedUris(uriItem, target);
     }
   }
 }

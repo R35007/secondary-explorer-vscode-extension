@@ -27,13 +27,8 @@ export async function exists(p: string): Promise<boolean> {
   }
 }
 
-export function sanitizeRelative(input: string): string {
+export function normalizePath(input: string): string {
   return input.replace(/[\\/]+/g, path.sep).trim();
-}
-
-export function isSubpath(base: string, target: string): boolean {
-  const rel = path.relative(path.resolve(base), path.resolve(target));
-  return !!rel && !rel.startsWith('..') && !path.isAbsolute(rel);
 }
 
 // Helps to convert template literal strings to applied values.

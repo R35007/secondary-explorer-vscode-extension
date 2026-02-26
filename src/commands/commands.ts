@@ -5,12 +5,12 @@ import { FSItem } from '../models/FSItem';
 import { SecondaryExplorerProvider } from '../providers/SecondaryExplorerProvider';
 import { isWindows, windowsInvalidName } from '../utils/constants';
 import { Settings } from '../utils/Settings';
-import { exists, existsAsync, getSelectedItems, sanitizeRelative, splitNameExt } from '../utils/utils';
+import { exists, existsAsync, getSelectedItems, normalizePath, splitNameExt } from '../utils/utils';
 const trash = require('trash').default;
 
 export function registerCommands(context: vscode.ExtensionContext, provider: SecondaryExplorerProvider, treeView: vscode.TreeView<FSItem>) {
-  // Clipboard state for cut/copy/paste
-  let clipboard: { type: 'cut' | 'copy'; items: FSItem[] } | null = null;
+  let clipboard: { type: 'cut' | 'copy'; items: FSItem[] } | null = null; // Clipboard state for cut/copy/paste
+  let lastOpenedFile: string | null = null;
 
   const addToSecondaryExplorer = async (uriOrUris: vscode.Uri | vscode.Uri[]) => {
     const uris: vscode.Uri[] = Array.isArray(uriOrUris) ? uriOrUris : uriOrUris ? [uriOrUris] : [];
@@ -93,14 +93,14 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
         const input = raw.trim();
         if (!input) return 'Name is required';
         if (path.isAbsolute(input)) return 'Provide a relative path, not absolute';
-        const target = path.resolve(basePath, sanitizeRelative(input));
+        const target = path.resolve(basePath, normalizePath(input));
         if (await exists(target)) return 'File already exists';
         return undefined;
       },
     });
     if (!value) return;
 
-    const rel = sanitizeRelative(value);
+    const rel = normalizePath(value);
     const target = path.resolve(basePath, rel);
 
     try {
@@ -137,14 +137,14 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
         const input = raw.trim();
         if (!input) return 'Name is required';
         if (path.isAbsolute(input)) return 'Provide a relative path, not absolute';
-        const target = path.resolve(basePath, sanitizeRelative(input));
+        const target = path.resolve(basePath, normalizePath(input));
         if (await exists(target)) return 'Folder already exists';
         return undefined;
       },
     });
     if (!value) return;
 
-    const rel = sanitizeRelative(value);
+    const rel = normalizePath(value);
     const target = path.resolve(basePath, rel);
 
     try {
@@ -161,18 +161,21 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
 
     if (!filesToOpen.length) return;
 
-    // Batch open with Promise.allSettled
     const results = await Promise.allSettled(
       filesToOpen.map((fileItem) => {
         const uri = vscode.Uri.file(fileItem.fullPath);
+
+        // If same file clicked again, open permanently (preview: false)
+        const isSameFile = lastOpenedFile === fileItem.fullPath;
+        lastOpenedFile = fileItem.fullPath;
+
         return vscode.commands.executeCommand('vscode.open', uri, {
-          preview: filesToOpen.length === 1,
+          preview: !isSameFile && filesToOpen.length === 1,
           preserveFocus: true,
         });
       }),
     );
 
-    // Handle failures gracefully
     results.forEach((res, idx) => {
       if (res.status === 'rejected') {
         console.error(`Failed to open: ${filesToOpen[idx].fullPath}`, res.reason);
@@ -263,7 +266,7 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
         if (!name) return 'Name is required';
         if (isWindows && windowsInvalidName.test(name)) return 'Invalid characters in name';
 
-        const newPath = path.resolve(parentDir, sanitizeRelative(name));
+        const newPath = path.resolve(parentDir, normalizePath(name));
         if (newPath === oldPath) return undefined;
         if (await exists(newPath)) return 'Target already exists';
         return undefined;
@@ -271,7 +274,7 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
     });
     if (!value) return;
 
-    const rel = sanitizeRelative(value.trim());
+    const rel = normalizePath(value.trim());
     const newPath = path.resolve(parentDir, rel);
 
     const isFolder = treeViewItem.type === 'folder';

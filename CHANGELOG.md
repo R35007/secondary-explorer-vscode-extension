@@ -4,6 +4,10 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [9.0.2] - 2026-02-26
+
+- Fixed drag and drop its own folder or subfolder will not throw error anymore
+
 ## [9.0.1] - 2026-02-25
 
 - Fixed Drag and drop to same folder shows progress. Now we wont show progress for drag and drop on same folder
