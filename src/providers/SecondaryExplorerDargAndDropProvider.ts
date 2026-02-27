@@ -114,7 +114,7 @@ export class SecondaryExplorerDragAndDrop implements vscode.TreeDragAndDropContr
     if ((!treeItem && !uriItem) || !target) return;
 
     const draggedPaths: string[] = treeItem?.value || uriItem?.value.split('\n').filter(Boolean) || [];
-    const normalizedPaths: string[] = draggedPaths.map((p) => vscode.Uri.parse(p).fsPath);
+    const normalizedPaths: string[] = draggedPaths.map(decodeURIComponent).map(normalizePath);
     const targetDir = await this.resolveTargetDir(target);
 
     if (!targetDir || normalizedPaths.length === 0) return;

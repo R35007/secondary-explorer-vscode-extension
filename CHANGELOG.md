@@ -4,6 +4,10 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [10.0.1] - 2026-02-27
+
+- Fixed an issue with drag and drop where paths were not properly normalized, causing errors when moving files. Now all dragged paths are decoded and normalized to ensure correct handling across different platforms and path formats.
+
 ## [10.0.0] - 2026-02-27
 
 - Support theme icons in secondary explorer. It will use the same icons as native explorer.
