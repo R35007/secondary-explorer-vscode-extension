@@ -1,7 +1,7 @@
 import fg from 'fast-glob';
 import * as fs from 'fs-extra';
 import micromatch from 'micromatch';
-import * as path from 'path';
+import path from 'path';
 import * as vscode from 'vscode';
 import { FSItem } from '../models/FSItem';
 import { NormalizedPaths, Settings } from '../utils/Settings';
@@ -12,8 +12,6 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
 
   #onDidChangeTreeData: vscode.EventEmitter<FSItem | undefined | void> = new vscode.EventEmitter<FSItem | undefined | void>();
   readonly onDidChangeTreeData: vscode.Event<FSItem | undefined | void> = this.#onDidChangeTreeData.event;
-
-  #shouldViewAsList = false;
 
   constructor(private context: vscode.ExtensionContext) {
     this.loadPaths();
@@ -39,8 +37,9 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
   }
 
   toggleListView(): void {
-    this.#shouldViewAsList = !this.#shouldViewAsList;
-    setContext('secondaryExplorerRootViewAsList', this.#shouldViewAsList);
+    const viewAsList = !Settings.viewAsList;
+    Settings.viewAsList = viewAsList;
+    setContext('secondaryExplorerRootViewAsList', viewAsList);
     this.refresh();
   }
 
@@ -52,13 +51,13 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
     return element;
   }
 
-  private getSortedItemsByPattern(items: FSItem[]) {
+  private getSortedItemsByPattern(items: FSItem[], sortOrderPattern: string[] = Settings.itemsSortOrderPattern) {
     const hasPatterns = Array.isArray(Settings.itemsSortOrderPattern) && Settings.itemsSortOrderPattern.length > 0;
 
     const rank = (label: string) => {
       const lower = label.toLocaleLowerCase();
-      const idx = Settings.itemsSortOrderPattern!.findIndex((p) => micromatch.isMatch(lower, p.toLocaleLowerCase()));
-      return idx === -1 ? Settings.itemsSortOrderPattern!.length : idx;
+      const idx = sortOrderPattern!.findIndex((p) => micromatch.isMatch(lower, p.toLocaleLowerCase()));
+      return idx === -1 ? sortOrderPattern!.length : idx;
     };
 
     return items.sort((a, b) => {
@@ -98,22 +97,37 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
     });
   };
 
-  private async getChildrenItems(base: string, include?: string[], exclude?: string[]) {
+  private async getChildrenItems(element: FSItem) {
     // If list view, ignore hierarchy and show all matching files
-    if (this.#shouldViewAsList) {
-      const matchedFiles = await fg.glob(include ?? ['**/*'], { cwd: base, ignore: exclude, onlyFiles: true, dot: true });
-      const items = matchedFiles.map((file) => new FSItem(path.resolve(base, file)));
-      return this.getSortedItemsByPattern(items);
+    if (element.viewAsList ?? Settings.viewAsList) {
+      const matchedFiles = await fg.glob(element.include ?? ['**/*'], {
+        cwd: element.basePath,
+        ignore: element.exclude,
+        onlyFiles: true,
+        dot: true,
+        absolute: true,
+      });
+      const items = matchedFiles.map(
+        (child) =>
+          new FSItem({
+            ...element,
+            basePath: child,
+            name: path.basename(child),
+            isRoot: false,
+            index: -1,
+          }),
+      );
+      return this.getSortedItemsByPattern(items, element.sortOrderPattern);
     }
 
     // immediate children (files + dirs)
     const children = await fg(['*'], {
-      cwd: base,
+      cwd: element.basePath,
       dot: true,
       onlyFiles: false,
       deep: 1,
       absolute: true,
-      ignore: exclude ?? [],
+      ignore: element.exclude ?? [],
     });
 
     const items: FSItem[] = [];
@@ -124,28 +138,30 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
       if (error) continue;
 
       // exclude priority (already applied, but double-check)
-      if (exclude?.length && micromatch.isMatch(child, exclude, { dot: true })) continue;
-      if (stats.isFile() && include?.length && !micromatch.isMatch(child, include, { dot: true })) continue;
+      if (element.exclude?.length && micromatch.isMatch(child, element.exclude, { dot: true })) continue;
+      if (stats.isFile() && element.include?.length && !micromatch.isMatch(child, element.include, { dot: true })) continue;
 
-      const shouldCheckNested = !Settings.showEmptyDirectories && stats.isDirectory() && (include?.length || exclude?.length);
+      const showEmptyDirectories = element.showEmptyDirectories ?? Settings.showEmptyDirectories;
+
+      const shouldCheckNested = !showEmptyDirectories && stats.isDirectory() && (element.include?.length || element.exclude?.length);
 
       if (shouldCheckNested) {
         // keep dir only if it contains at least one matching file
-        const nestedMatches = await fg(include ?? ['**/*'], {
+        const nestedMatches = await fg(element.include ?? ['**/*'], {
           cwd: child,
           dot: true,
           onlyFiles: true,
           absolute: true,
-          ignore: exclude ?? [],
+          ignore: element.exclude ?? [],
         });
 
         if (nestedMatches.length === 0) continue;
       }
 
-      items.push(new FSItem(child, path.basename(child), include, exclude));
+      items.push(new FSItem({ ...element, basePath: child, name: path.basename(child), isRoot: false, index: -1 }));
     }
 
-    return this.getSortedItemsByPattern(items);
+    return this.getSortedItemsByPattern(items, element.sortOrderPattern);
   }
 
   private async renderSingleRoot() {
@@ -154,11 +170,9 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
 
     // Only one file, show just that file
     if (stat.isFile()) {
-      return [new FSItem(pathObj.basePath, pathObj.name, pathObj.include, pathObj.exclude, true, 0)];
+      return [new FSItem({ ...pathObj, isRoot: true, index: 0 })];
     }
-    // isFile = true, isRoot = true
-
-    return await this.getChildrenItems(pathObj.basePath, pathObj.include, pathObj.exclude);
+    return await this.getChildrenItems(new FSItem(pathObj));
   }
 
   private async renderRootItems() {
@@ -168,7 +182,7 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
     for (const [index, pathObj] of this.explorerPaths.entries()) {
       const [_, error] = await safePromise(fs.stat(pathObj.basePath));
       if (error) continue;
-      items.push(new FSItem(pathObj.basePath, pathObj.name, pathObj.include, pathObj.exclude, true, index));
+      items.push(new FSItem({ ...pathObj, isRoot: true, index }));
     }
     return Settings.rootPathSortOrder === 'default' ? items : this.getRootSortedItems(items);
   }
@@ -176,9 +190,9 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
   async getChildren(element?: FSItem): Promise<FSItem[]> {
     try {
       if (!element) return await this.renderRootItems();
-      const full = element.fullPath;
+      const full = element.basePath;
       const stat = await fs.stat(full);
-      if (stat.isDirectory()) return await this.getChildrenItems(full, element.include, element.exclude);
+      if (stat.isDirectory()) return await this.getChildrenItems(element);
       return [];
     } catch {
       return [];

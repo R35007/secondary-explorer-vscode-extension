@@ -2,7 +2,7 @@
   "name": "secondary-explorer",
   "displayName": "Secondary Explorer",
   "description": "Adds a secondary explorer view to manage files and folders outside the default workspace explorer.",
-  "version": "9.0.2",
+  "version": "10.0.0",
   "icon": "images/logo.png",
   "publisher": "Thinker",
   "license": "MIT",
@@ -136,6 +136,56 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Whether this group is initially hidden in the explorer."
+                  },
+                  "showEmptyDirectories": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ],
+                    "default": null,
+                    "examples": [
+                      [
+                        true,
+                        false,
+                        null
+                      ]
+                    ],
+                    "description": "Set to true to show empty directories in this group. Can be set to null to use global `#secondaryExplorer.showEmptyDirectories#` setting."
+                  },
+                  "sortOrderPattern": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "type": "string"
+                    },
+                    "examples": [
+                      [
+                        "*.instructions.md",
+                        "*.prompt.md",
+                        "*.agent.md",
+                        "*.chatmode.md"
+                      ],
+                      null
+                    ],
+                    "default": null,
+                    "description": "Optional pattern to control sorting order of items in this group. Can be set to null to use global `#secondaryExplorer.itemsSortOrderPattern#` sorting order."
+                  },
+                  "viewAsList": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ],
+                    "default": null,
+                    "examples": [
+                      [
+                        true,
+                        false,
+                        null
+                      ]
+                    ],
+                    "description": "Set to true to show items in this group as a flat list instead of a tree. Can be set to null to use global `#secondaryExplorer.viewAsList#` setting."
                   }
                 },
                 "examples": [
@@ -153,6 +203,14 @@
                       "build",
                       "out",
                       ".vscode-test"
+                    ],
+                    "showEmptyDirectories": false,
+                    "viewAsList": false,
+                    "sortOrderPattern": [
+                      "*.instructions.md",
+                      "*.prompt.md",
+                      "*.agent.md",
+                      "*.chatmode.md"
                     ]
                   },
                   {
@@ -161,6 +219,14 @@
                     "hidden": false,
                     "include": [
                       "**/*.{md,markdown,txt,rtf,adoc,asciidoc,restructuredtext,org,html,htm,pdf,docx,odt}"
+                    ],
+                    "showEmptyDirectories": false,
+                    "viewAsList": true,
+                    "sortOrderPattern": [
+                      "*.instructions.md",
+                      "*.prompt.md",
+                      "*.agent.md",
+                      "*.chatmode.md"
                     ]
                   },
                   {
@@ -169,7 +235,9 @@
                     "hidden": false,
                     "include": [
                       "**/*.{png,jpg,jpeg,gif,svg,webp,avif,bmp,tiff,ico,icns,heic,heif}"
-                    ]
+                    ],
+                    "showEmptyDirectories": true,
+                    "viewAsList": false
                   },
                   {
                     "basePath": "${workspaceFolder}",
@@ -283,9 +351,24 @@
             "*.instructions.md",
             "*.prompt.md",
             "*.agent.md",
-            "*.chatmode.md"
+            "*.chatmode.md",
+            "*.SKILL.md"
+          ],
+          "examples": [
+            [
+              "*.instructions.md",
+              "*.prompt.md",
+              "*.agent.md",
+              "*.chatmode.md"
+            ]
           ],
           "description": "Controls the sorting order of items in the explorer."
+        },
+        "secondaryExplorer.viewAsList": {
+          "order": 5,
+          "type": "boolean",
+          "default": false,
+          "description": "Set to true to show all items in the explorer as a flat list instead of a tree. By default, items are shown in a tree structure that reflects their folder hierarchy."
         }
       }
     },
@@ -403,6 +486,11 @@
         "icon": "$(trash)"
       },
       {
+        "command": "secondary-explorer.hidePath",
+        "title": "Hide From Explorer",
+        "icon": "$(eye-closed)"
+      },
+      {
         "command": "secondary-explorer.openInTerminal",
         "title": "Open in Integrated Terminal",
         "icon": "$(terminal)"
@@ -426,6 +514,11 @@
         "command": "secondary-explorer.copyToWorkspaceRoot",
         "title": "Copy to Workspace Root",
         "icon": "$(copy)"
+      },
+      {
+        "command": "secondary-explorer.moveToWorkspaceRoot",
+        "title": "Move to Workspace Root",
+        "icon": "$(move)"
       },
       {
         "command": "secondary-explorer.addSelectedToWorkspace",
@@ -508,6 +601,10 @@
           "when": "false"
         },
         {
+          "command": "secondary-explorer.hidePath",
+          "when": "false"
+        },
+        {
           "command": "secondary-explorer.viewAsList",
           "when": "false"
         },
@@ -517,6 +614,10 @@
         },
         {
           "command": "secondary-explorer.copyToWorkspaceRoot",
+          "when": "false"
+        },
+        {
+          "command": "secondary-explorer.moveToWorkspaceRoot",
           "when": "false"
         },
         {
@@ -543,39 +644,44 @@
           "group": "inline"
         },
         {
-          "command": "secondary-explorer.removePath",
+          "command": "secondary-explorer.hidePath",
           "when": "view == secondaryExplorerView && viewItem == root",
           "group": "navigation@2"
         },
         {
-          "command": "secondary-explorer.openFile",
-          "when": "view == secondaryExplorerView && viewItem == file",
+          "command": "secondary-explorer.removePath",
+          "when": "view == secondaryExplorerView && viewItem == root",
           "group": "navigation@3"
         },
         {
-          "command": "secondary-explorer.openToTheSide",
+          "command": "secondary-explorer.openFile",
           "when": "view == secondaryExplorerView && viewItem == file",
           "group": "navigation@4"
         },
         {
-          "command": "secondary-explorer.revealInFileExplorer",
-          "when": "view == secondaryExplorerView",
+          "command": "secondary-explorer.openToTheSide",
+          "when": "view == secondaryExplorerView && viewItem == file",
           "group": "navigation@5"
         },
         {
-          "command": "secondary-explorer.openInTerminal",
+          "command": "secondary-explorer.revealInFileExplorer",
           "when": "view == secondaryExplorerView",
           "group": "navigation@6"
         },
         {
+          "command": "secondary-explorer.openInTerminal",
+          "when": "view == secondaryExplorerView",
+          "group": "navigation@7"
+        },
+        {
           "command": "secondary-explorer.openFolderInNewWindow",
           "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
-          "group": "navigation@7"
+          "group": "navigation@8"
         },
         {
           "command": "secondary-explorer.addSelectedToWorkspace",
           "when": "view == secondaryExplorerView",
-          "group": "navigation@8"
+          "group": "navigation@9"
         },
         {
           "command": "secondary-explorer.createFile",
@@ -616,6 +722,11 @@
           "command": "secondary-explorer.copyToWorkspaceRoot",
           "when": "view == secondaryExplorerView",
           "group": "copy@3"
+        },
+        {
+          "command": "secondary-explorer.moveToWorkspaceRoot",
+          "when": "view == secondaryExplorerView",
+          "group": "copy@4"
         },
         {
           "command": "secondary-explorer.renameEntry",

@@ -4,6 +4,53 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [10.0.0] - 2026-02-27
+
+- Support theme icons in secondary explorer. It will use the same icons as native explorer.
+- Added `secondaryExplorer.viewAsList` settings. if true, it shows the explorer in list view mode.
+- Added `Hide from Explorer` and `Move to Workspace Root` options in the context menu.
+- Enabled drag and drop file moving from native explorer to secondary explorer. We cannot darg and drop files from secondary explorer to native explorer because of the API limitations. Use `Copy to Workspace Root` or `Move to Workspace Root` context menu options to move the file to workspace root and then you can move it to native explorer.
+- Added `secondaryExplorer.paths.showEmptyDirectories` setting. Set to true to show empty directories in this group. Can be set to null to use global `#secondaryExplorer.showEmptyDirectories#` setting.
+- Added `secondaryExplorer.paths.viewAsList` setting. Set to true to show this group in list view mode. Can be set to null to use global `#secondaryExplorer.viewAsList#` setting.
+- Added `secondaryExplorer.paths.sortOrderPattern` setting. Helps to sort folder items by pattern. Can be set to null to use global `#secondaryExplorer.itemsSortOrderPattern#` setting.
+  - Example Configuration:
+
+    ```jsonc
+    "secondaryExplorer.paths": [
+      {
+        "basePath": "./src",
+        "name": "Source Code",
+        "include": [ "**/*.ts", "**/*.js" ],
+        "exclude": [ "**/node_modules/**", "**/dist/**" ],
+        "hidden": false,
+        "showEmptyDirectories": true,
+        "viewAsList": false,
+        "sortOrderPattern": [ "*.ts", "*.js", "*.md" ]
+      },
+      {
+        "basePath": "./docs",
+        "name": "Documentation",
+        "include": [ "**/*.md", "**/*.txt" ],
+        "exclude": [ "**/node_modules/**", "**/dist/**" ],
+        "hidden": false,
+        "showEmptyDirectories": false,
+        "viewAsList": true,
+        "sortOrderPattern": [ "*.md", "*.txt" ]
+      }
+    ],
+    "secondaryExplorer.itemsSortOrderPattern": [
+      "*.instructions.md",
+      "*.prompt.md",
+      "*.agent.md",
+      "*.chatmode.md",
+      "SKILL.md"
+    ],
+    "secondaryExplorer.rootPathSortOrder": "default",
+    "secondaryExplorer.showEmptyDirectories": false,
+    "secondaryExplorer.viewAsList": false,
+    "secondaryExplorer.deleteBehavior": "recycleBin"
+    ```
+
 ## [9.0.2] - 2026-02-26
 
 - Fixed drag and drop its own folder or subfolder will not throw error anymore

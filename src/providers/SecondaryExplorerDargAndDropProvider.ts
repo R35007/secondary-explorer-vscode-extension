@@ -18,9 +18,9 @@ export class SecondaryExplorerDragAndDrop implements vscode.TreeDragAndDropContr
    * be recognized by the explorer and editor.
    */
   async handleDrag(source: readonly FSItem[], treeDataTransfer: vscode.DataTransfer, token: vscode.CancellationToken) {
-    treeDataTransfer.set('application/vnd.code.tree.secondaryExplorerView', new vscode.DataTransferItem(source.map((s) => s.fullPath)));
+    treeDataTransfer.set('application/vnd.code.tree.secondaryExplorerView', new vscode.DataTransferItem(source.map((s) => s.basePath)));
 
-    const uris = source.map((s) => vscode.Uri.file(s.fullPath).toString()).join('\n');
+    const uris = source.map((s) => vscode.Uri.file(s.basePath).toString()).join('\n');
     treeDataTransfer.set('text/uri-list', new vscode.DataTransferItem(uris));
   }
 
@@ -31,8 +31,8 @@ export class SecondaryExplorerDragAndDrop implements vscode.TreeDragAndDropContr
    */
   private async resolveTargetDir(target: FSItem): Promise<string | null> {
     try {
-      const stat = await fs.stat(target.fullPath);
-      return stat.isDirectory() ? target.fullPath : path.dirname(target.fullPath);
+      const stat = await fs.stat(target.basePath);
+      return stat.isDirectory() ? normalizePath(target.basePath) : normalizePath(path.dirname(target.basePath));
     } catch (err) {
       vscode.window.showErrorMessage(`Target not accessible: ${String(err)}`);
       return null;
@@ -103,45 +103,29 @@ export class SecondaryExplorerDragAndDrop implements vscode.TreeDragAndDropContr
   }
 
   /**
-   * Opens dropped URIs directly in the editor.
-   * Supports opening beside the current editor if no target is provided.
-   */
-  private async openDroppedUris(uriItem: vscode.DataTransferItem, target?: FSItem) {
-    const uris: string[] = uriItem.value.split('\n').filter(Boolean);
-    for (const uriStr of uris) {
-      const uri = vscode.Uri.parse(uriStr);
-      const activeEditor = vscode.window.activeTextEditor;
-      const column = activeEditor ? activeEditor.viewColumn : vscode.ViewColumn.One;
-      const openBeside = target === undefined;
-      await vscode.window.showTextDocument(uri, { viewColumn: openBeside ? vscode.ViewColumn.Beside : column, preview: false });
-    }
-  }
-
-  /**
    * Main drop handler. Decides whether the drop is a move
    * within the explorer or an open action in the editor.
    * Delegates actual work to helper functions for clarity.
    */
   async handleDrop(target: FSItem | undefined, dataTransfer: vscode.DataTransfer, token: vscode.CancellationToken) {
     const treeItem = dataTransfer.get('application/vnd.code.tree.secondaryExplorerView');
-    if (treeItem && target) {
-      const draggedPaths: string[] = treeItem.value;
-      const targetDir = await this.resolveTargetDir(target);
-      if (!targetDir) return;
-
-      const hasFolder = draggedPaths.some((i) => fs.statSync(i).isDirectory());
-      const isSameOrSubDir = draggedPaths.every((p) => this.isSameOrSubDir(p, targetDir));
-      if (isSameOrSubDir) return;
-
-      const showProgress = draggedPaths.length > 1 || hasFolder;
-      await this.runMove(draggedPaths, targetDir, showProgress);
-      this.provider.refresh();
-      return;
-    }
-
     const uriItem = dataTransfer.get('text/uri-list');
-    if (uriItem) {
-      await this.openDroppedUris(uriItem, target);
-    }
+
+    if ((!treeItem && !uriItem) || !target) return;
+
+    const draggedPaths: string[] = treeItem?.value || uriItem?.value.split('\n').filter(Boolean) || [];
+    const normalizedPaths: string[] = draggedPaths.map((p) => vscode.Uri.parse(p).fsPath);
+    const targetDir = await this.resolveTargetDir(target);
+
+    if (!targetDir || normalizedPaths.length === 0) return;
+
+    const hasFolder = normalizedPaths.some((i) => fs.statSync(i).isDirectory());
+    const isSameOrSubDir = normalizedPaths.every((p) => this.isSameOrSubDir(p, targetDir));
+    if (isSameOrSubDir) return;
+
+    const showProgress = normalizedPaths.length > 1 || hasFolder;
+    await this.runMove(normalizedPaths, targetDir, showProgress);
+    this.provider.refresh();
+    return;
   }
 }

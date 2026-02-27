@@ -28,7 +28,10 @@ export async function exists(p: string): Promise<boolean> {
 }
 
 export function normalizePath(input: string): string {
-  return input.replace(/[\\/]+/g, path.sep).trim();
+  return input
+    .replace(/[\\/]+/g, path.sep)
+    .replace('file:' + path.sep, '')
+    .trim();
 }
 
 // Helps to convert template literal strings to applied values.
@@ -64,8 +67,8 @@ export function getSelectedItems(treeView: vscode.TreeView<FSItem>) {
   function uniqueByFullPath(items: readonly FSItem[]): FSItem[] {
     const seen = new Set<string>();
     return items.filter((item) => {
-      if (seen.has(item.fullPath.replace(/\\/g, '/').toLowerCase())) return false;
-      seen.add(item.fullPath.replace(/\\/g, '/').toLowerCase());
+      if (seen.has(item.basePath.replace(/\\/g, '/').toLowerCase())) return false;
+      seen.add(item.basePath.replace(/\\/g, '/').toLowerCase());
       return true;
     });
   }

@@ -9,6 +9,9 @@ type UserPaths = {
   include?: string | string[];
   exclude?: string | string[];
   hidden?: boolean;
+  showEmptyDirectories?: boolean;
+  viewAsList?: boolean;
+  sortOrderPattern?: string[];
 };
 
 export type NormalizedPaths = {
@@ -17,6 +20,9 @@ export type NormalizedPaths = {
   include?: string[];
   exclude?: string[];
   hidden?: boolean;
+  showEmptyDirectories?: boolean;
+  viewAsList?: boolean;
+  sortOrderPattern?: string[];
 };
 
 export class Settings {
@@ -40,6 +46,12 @@ export class Settings {
   static get showEmptyDirectories() {
     return Settings.getSettings('showEmptyDirectories') as boolean;
   }
+  static get viewAsList() {
+    return Settings.getSettings('viewAsList') as boolean;
+  }
+  static set viewAsList(value: boolean) {
+    Settings.setSettings('viewAsList', value);
+  }
   static get deleteBehavior() {
     return (Settings.getSettings('deleteBehavior') as 'alwaysAsk' | 'recycleBin' | 'permanent') || 'recycleBin';
   }
@@ -53,15 +65,14 @@ export class Settings {
   static get parsedPaths() {
     const paths = Settings.paths;
     const workspaceFolders = vscode.workspace.workspaceFolders || [];
-    const userHome = process.env.HOME || process.env.USERPROFILE || '';
-    const defaultInclude: string[] = [];
+    const defaultInclude: string[] = ['**/*'];
     const defaultExclude: string[] = ['node_modules', 'dist', 'build', 'out'];
 
     const interpolateObject = {
       workspaceFolder: workspaceFolders[0]?.uri.fsPath || '',
-      userHome,
       workspaceFolderName: workspaceFolders[0]?.name || '',
       workspaceFolderBasename: path.basename(workspaceFolders[0]?.uri.fsPath || ''),
+      userHome: process.env.HOME || process.env.USERPROFILE || '',
     };
 
     function extractVariableAndValue(input: string) {
@@ -83,6 +94,8 @@ export class Settings {
         return {
           basePath: resolvedBasePath,
           name: folderName || path.basename(resolvedBasePath),
+          include: getFormattedPatternPaths(defaultInclude),
+          exclude: getFormattedPatternPaths(defaultExclude),
         };
       }
       const [variable = p.basePath, folderName] = extractVariableAndValue(p.basePath || '${workspaceFolder}') || [];

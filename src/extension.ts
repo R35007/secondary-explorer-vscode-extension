@@ -33,6 +33,7 @@ export function activate(context: vscode.ExtensionContext) {
     if (Settings.parsedPaths.length === 1) {
       const stat = fsx.statSync(Settings.parsedPaths[0].basePath);
       if (stat.isDirectory()) {
+        treeView.description = Settings.parsedPaths[0].basePath;
         treeView.title = Settings.parsedPaths[0].name || path.basename(Settings.parsedPaths[0].basePath);
         return;
       }
