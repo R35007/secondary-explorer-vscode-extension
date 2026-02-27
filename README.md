@@ -178,7 +178,7 @@ You can configure which folders and files appear in the **Secondary Explorer** t
 >   - By default , in includes `[**/*]` which means all files.
 > - If you set `include: ["*.md"]` and `exclude: ["node_modules"]`, all Markdown files inside `node_modules` will be excluded from the tree view, even if they match the include pattern.
 
-> [!WARNING]Limitations
+> [!WARNING] Limitations
 >
 > - Files and folders can be moved or dragged from the native VS Code explorer into the secondary explorer, or within the secondary explorer itself. Moving items from the secondary explorer back to the native explorer is not supported due to API restrictions.
 > - Cut, copy, and paste operations between the secondary explorer and the native VS Code explorer are also not supported.
