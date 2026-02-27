@@ -86,12 +86,6 @@ You can also toggle the view mode from the view title toolbar:
 
 ---
 
-## Limitations
-
-- Files and folders can be moved or dragged from the native VS Code explorer into the secondary explorer, or within the secondary explorer itself. Moving items from the secondary explorer back to the native explorer is not supported due to API restrictions.
-- Cut, copy, and paste operations between the secondary explorer and the native VS Code explorer are also not supported.
-- As a workaround, use the `Copy to Workspace Root` or `Move to Workspace Root` commands from the secondary explorer context menu to transfer items into the native VS Code workspace.
-
 ## Configuration
 
 Configure folders to display via VS Code settings. Multi-root workspaces are supported—use `${workspaceFolder}` to target every root folder, or `${workspaceFolder:FolderName}` to target a specific one (matching either the workspace folder name or its basename). You can also use `${workspaceFolderName}`, and `${workspaceFolderBasename}` inside `name` values for dynamic labels.
