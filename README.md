@@ -88,40 +88,49 @@ You can also toggle the view mode from the view title toolbar:
 
 ## Configuration
 
-Configure folders to display via VS Code settings. Multi-root workspaces are supported—use `${workspaceFolder}` to target every root folder, or `${workspaceFolder:FolderName}` to target a specific one (matching either the workspace folder name or its basename). You can also use `${workspaceFolderName}`, and `${workspaceFolderBasename}` inside `name` values for dynamic labels.
+You can configure which folders and files appear in the **Secondary Explorer** through VS Code settings. Multi-root workspaces are supported:
+
+- Use `${workspaceFolder}` to target every root folder.
+- Use `${workspaceFolder:FolderName}` to target a specific workspace folder with a custom name to show in the explorer. Eg: `${workspaceFolder:Docs}`.
+- Use `${workspaceFolderName}` or `${workspaceFolderBasename}` inside `name` values for dynamic labels.
+- Use `${userHome}` to reference the user’s home directory (recommended on macOS instead of `~`).
+
+---
+
+### Available Settings
 
 ```jsonc
 {
   "secondaryExplorer.paths": [
+    // Simple paths
     "${workspaceFolder}/docs",
     "${workspaceFolder:Docs}/guides",
-
     "${userHome}/notes",
-    "${userHome: Notes}/notes",
-
     "C:/path/to/folder",
     "C:/path/to/folder/file.txt",
-    // Or rich objects with filtering and custom name
+
+    // Rich object configuration
     {
-      "basePath": "${workspaceFolder}", // supports variables like ${workspaceFolder} and ${userHome}
-      "name": "${workspaceFolderName} - Docs", // supports variables like ${workspaceFolderName} and ${workspaceFolderBasename}
-      "hidden": false, // if true it hides the folder
-      "showEmptyDirectories": false, // if true it shows the empty directories for this path regardless of global setting
-      "viewAsList": true, // if true it shows the items in list view mode regardless of global setting
-      "sortOrderPattern": ["*.md", "*.txt"], // if set it sorts the items based on the pattern, otherwise it uses the global pattern or default sorting
-      "include": ["*.md", "*.txt"], // include: only file patterns
-      "exclude": ["node_modules", "dist", "build", "out"], // exclude: file or folder patterns
+      "basePath": "${workspaceFolder}", // supports variables like ${workspaceFolder}, ${userHome}
+      "name": "${workspaceFolderName} - Docs", // dynamic labels
+      "hidden": false, // hide this folder if true
+      "showEmptyDirectories": false, // override global empty directory setting
+      "viewAsList": true, // force list view for this path
+      "sortOrderPattern": ["*.md", "*.txt"], // custom sorting pattern
+      "include": ["*.md", "*.txt"], // include only matching file patterns
+      "exclude": ["node_modules", "dist", "build", "out"], // exclude files or folders
     },
   ],
-  "secondaryExplorer.deleteBehavior": "recycleBin", // "alwaysAsk" or "recycleBin" or "permanent"
-  "secondaryExplorer.rootPathSortOrder": "default", // "default" or "filesFirst" or "foldersFirst" or "mixed"
-  "secondaryExplorer.showEmptyDirectories": false, // if true it shows the empty directories
-  "secondaryExplorer.viewAsList": false, // if true it shows the items in list view mode otherwise it uses the tree view mode
-  "secondaryExplorer.itemsSortOrderPattern": ["*.instructions.md", "*.prompt.md", "*.agent.md", "*.chatmode.md", "SKILL.md"], // if set it sorts the items based on the pattern, otherwise it uses the default sorting
+
+  "secondaryExplorer.deleteBehavior": "recycleBin", // "alwaysAsk" | "recycleBin" | "permanent"
+  "secondaryExplorer.rootPathSortOrder": "default", // "default" | "filesFirst" | "foldersFirst" | "mixed"
+  "secondaryExplorer.showEmptyDirectories": false, // global empty directory visibility
+  "secondaryExplorer.viewAsList": false, // global list view mode
+  "secondaryExplorer.itemsSortOrderPattern": ["*.instructions.md", "*.prompt.md", "*.agent.md", "*.chatmode.md", "SKILL.md"], // global sorting pattern
 }
 ```
 
-Example configuration:
+### Example configuration:
 
 ```jsonc
 {
@@ -134,7 +143,7 @@ Example configuration:
     },
     {
       "basePath": "${userHome}/repo",
-      "name": "${WorkspaceFolderName} Docs",
+      "name": "${workspaceFolderName} Docs",
       "include": ["**/*.{md,markdown,txt,rtf,adoc,asciidoc,restructuredtext,org,html,htm,pdf,docx,odt}"],
     },
     {
@@ -158,6 +167,8 @@ Example configuration:
   "secondaryExplorer.itemsSortOrderPattern": ["*.instructions.md", "*.prompt.md", "*.agent.md", "*.chatmode.md", "SKILL.md"],
 }
 ```
+
+---
 
 > [!NOTE]
 >
