@@ -53,8 +53,25 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
     const treeViewItem = item || getSelectedItems(treeView).at(-1);
     if (!treeViewItem) return;
 
-    const targetFolder = treeViewItem.type === 'file' ? path.dirname(treeViewItem.basePath) : treeViewItem.basePath;
-    await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(targetFolder), true);
+    let targetUri: vscode.Uri;
+
+    if (treeViewItem.type === 'file') {
+      if (treeViewItem.basePath.endsWith('.code-workspace')) {
+        // Open the workspace file itself
+        targetUri = vscode.Uri.file(treeViewItem.basePath);
+      } else {
+        // For normal files, open their parent folder
+        targetUri = vscode.Uri.file(path.dirname(treeViewItem.basePath));
+      }
+    } else {
+      // For folders, open the folder directly
+      targetUri = vscode.Uri.file(treeViewItem.basePath);
+    }
+
+    // Always force a new window, even if already open
+    await vscode.commands.executeCommand('vscode.openFolder', targetUri, {
+      forceNewWindow: true,
+    });
   };
 
   const removePath = async (item?: FSItem) => {
