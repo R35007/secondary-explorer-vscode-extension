@@ -2,7 +2,7 @@
   "name": "secondary-explorer",
   "displayName": "Secondary Explorer",
   "description": "Adds a secondary explorer view to manage files and folders outside the default workspace explorer.",
-  "version": "10.1.0",
+  "version": "10.1.1",
   "icon": "images/logo.png",
   "publisher": "Thinker",
   "license": "MIT",
@@ -64,7 +64,10 @@
                     "type": "string",
                     "default": "${workspaceFolder}",
                     "examples": [
-                      "${workspaceFolder}"
+                      "${workspaceFolder}",
+                      "${workspaceFolder: Source}/src",
+                      "${userHome}",
+                      "${userHome: User Home}"
                     ],
                     "markdownDescription": "Base folder path. Supports ${workspaceFolder} and ${userHome}. If omitted, uses current workspace folder."
                   },
@@ -144,11 +147,9 @@
                     ],
                     "default": null,
                     "examples": [
-                      [
-                        true,
-                        false,
-                        null
-                      ]
+                      true,
+                      false,
+                      null
                     ],
                     "description": "Set to true to show empty directories in this group. Can be set to null to use global `#secondaryExplorer.showEmptyDirectories#` setting."
                   },
@@ -165,7 +166,8 @@
                         "*.instructions.md",
                         "*.prompt.md",
                         "*.agent.md",
-                        "*.chatmode.md"
+                        "*.chatmode.md",
+                        "*.md"
                       ],
                       null
                     ],
@@ -179,17 +181,18 @@
                     ],
                     "default": null,
                     "examples": [
-                      [
-                        true,
-                        false,
-                        null
-                      ]
+                      true,
+                      false,
+                      null
                     ],
                     "description": "Set to true to show items in this group as a flat list instead of a tree. Can be set to null to use global `#secondaryExplorer.viewAsList#` setting."
                   }
                 },
                 "examples": [
                   "${workspaceFolder}",
+                  "${workspaceFolder: Source}/src",
+                  "${userHome}",
+                  "${userHome: User Home}",
                   {
                     "basePath": "${workspaceFolder}",
                     "name": "All Workspace Files",
@@ -254,49 +257,70 @@
             ]
           },
           "examples": [
-            "${workspaceFolder}",
-            {
-              "basePath": "${workspaceFolder}",
-              "name": "All Workspace Files",
-              "include": [
-                "**/*"
-              ],
-              "exclude": [
-                "node_modules",
-                "dist",
-                "build",
-                "out",
-                ".vscode-test"
-              ]
-            },
-            {
-              "basePath": "${workspaceFolder}",
-              "name": "Workspace Docs",
-              "include": [
-                "**/*.{md,markdown,txt,rtf,adoc,asciidoc,restructuredtext,org,html,htm,pdf,docx,odt}"
-              ],
-              "exclude": [
-                "node_modules",
-                "dist",
-                "build",
-                "out",
-                ".vscode-test"
-              ]
-            },
-            {
-              "basePath": "${workspaceFolder}",
-              "name": "Workspace Images",
-              "include": [
-                "**/*.{png,jpg,jpeg,gif,svg,webp,avif,bmp,tiff,ico,icns,heic,heif}"
-              ],
-              "exclude": [
-                "node_modules",
-                "dist",
-                "build",
-                "out",
-                ".vscode-test"
-              ]
-            }
+            [
+              "${workspaceFolder}",
+              "${workspaceFolder: Source}/src",
+              "${userHome}",
+              "${userHome: User Home}",
+              {
+                "basePath": "${workspaceFolder}",
+                "name": "All Workspace Files",
+                "hidden": false,
+                "include": [
+                  "**/*"
+                ],
+                "exclude": [
+                  "node_modules",
+                  "dist",
+                  "build",
+                  "out",
+                  ".vscode-test"
+                ],
+                "showEmptyDirectories": false,
+                "viewAsList": false,
+                "sortOrderPattern": [
+                  "*.instructions.md",
+                  "*.prompt.md",
+                  "*.agent.md",
+                  "*.chatmode.md"
+                ]
+              },
+              {
+                "basePath": "${workspaceFolder}",
+                "name": "Workspace Docs",
+                "hidden": false,
+                "include": [
+                  "**/*.{md,markdown,txt,rtf,adoc,asciidoc,restructuredtext,org,html,htm,pdf,docx,odt}"
+                ],
+                "showEmptyDirectories": false,
+                "viewAsList": true,
+                "sortOrderPattern": [
+                  "*.instructions.md",
+                  "*.prompt.md",
+                  "*.agent.md",
+                  "*.chatmode.md"
+                ]
+              },
+              {
+                "basePath": "${userHome}/mac/path/to/images",
+                "name": "Workspace Images",
+                "hidden": false,
+                "include": [
+                  "**/*.{png,jpg,jpeg,gif,svg,webp,avif,bmp,tiff,ico,icns,heic,heif}"
+                ],
+                "showEmptyDirectories": true,
+                "viewAsList": false
+              },
+              {
+                "basePath": "${workspaceFolder}",
+                "name": "Workspace Tests",
+                "hidden": false,
+                "include": [
+                  "*.test.{js,ts,tsx,jsx}",
+                  "*.spec.{js,ts,tsx,jsx}"
+                ]
+              }
+            ]
           ],
           "default": []
         },
@@ -316,14 +340,20 @@
           "default": "recycleBin",
           "description": "Controls how delete operations are handled."
         },
-        "secondaryExplorer.showEmptyDirectories": {
+        "secondaryExplorer.viewAsList": {
           "order": 3,
+          "type": "boolean",
+          "default": false,
+          "description": "Set to true to show all items in the explorer as a flat list instead of a tree. By default, items are shown in a tree structure that reflects their folder hierarchy."
+        },
+        "secondaryExplorer.showEmptyDirectories": {
+          "order": 4,
           "type": "boolean",
           "default": false,
           "description": "Set to true to show empty directories in the explorer. By default, empty directories are hidden to reduce clutter."
         },
         "secondaryExplorer.rootPathSortOrder": {
-          "order": 4,
+          "order": 5,
           "type": "string",
           "enum": [
             "default",
@@ -341,7 +371,7 @@
           "description": "Controls the sorting order of items in the explorer."
         },
         "secondaryExplorer.itemsSortOrderPattern": {
-          "order": 5,
+          "order": 6,
           "type": "array",
           "items": {
             "type": "string"
@@ -359,16 +389,11 @@
               "*.instructions.md",
               "*.prompt.md",
               "*.agent.md",
-              "*.chatmode.md"
+              "*.chatmode.md",
+              "*.md"
             ]
           ],
           "description": "Controls the sorting order of items in the explorer."
-        },
-        "secondaryExplorer.viewAsList": {
-          "order": 5,
-          "type": "boolean",
-          "default": false,
-          "description": "Set to true to show all items in the explorer as a flat list instead of a tree. By default, items are shown in a tree structure that reflects their folder hierarchy."
         }
       }
     },

@@ -4,6 +4,10 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [10.1.1] - 2026-02-27
+
+- Updated Docs and examples
+
 ## [10.1.0] - 2026-02-27
 
 - Update `Open in New Window` command to open the `*.code-workspace` file if the selected folder is a workspace folder. This allows users to open the entire workspace in a new window instead of opening it as a regular folder or editable file. If the selected folder is not a workspace folder, it will continue to open as before. This enhancement provides a more intuitive experience when working with multi-root workspaces in the secondary explorer.
