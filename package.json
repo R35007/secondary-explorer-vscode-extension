@@ -2,7 +2,7 @@
   "name": "secondary-explorer",
   "displayName": "Secondary Explorer",
   "description": "Adds a secondary explorer view to manage files and folders outside the default workspace explorer.",
-  "version": "10.1.1",
+  "version": "11.0.0",
   "icon": "images/logo.png",
   "publisher": "Thinker",
   "license": "MIT",
@@ -34,7 +34,7 @@
     "secondary-explorer"
   ],
   "engines": {
-    "vscode": "^1.103.0"
+    "vscode": "^1.109.0"
   },
   "categories": [
     "Other"
@@ -44,6 +44,153 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "commands": [
+      {
+        "command": "secondary-explorer.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "secondary-explorer.pickPath",
+        "title": "Add File or Folder to Explorer",
+        "icon": "$(add)"
+      },
+      {
+        "command": "secondary-explorer.openSettings",
+        "title": "Settings",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "secondary-explorer.createFile",
+        "title": "New File...",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "secondary-explorer.createFolder",
+        "title": "New Folder...",
+        "icon": "$(new-folder)"
+      },
+      {
+        "command": "secondary-explorer.deleteEntry",
+        "title": "Delete",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "secondary-explorer.renameEntry",
+        "title": "Rename...",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "secondary-explorer.openFile",
+        "title": "Open File",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "secondary-explorer.openToTheSide",
+        "title": "Open to the Side",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "secondary-explorer.openFolderInNewWindow",
+        "title": "Open in New Window",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "secondary-explorer.cutEntry",
+        "title": "Cut",
+        "icon": "$(cut)"
+      },
+      {
+        "command": "secondary-explorer.copyEntry",
+        "title": "Copy",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "secondary-explorer.pasteEntry",
+        "title": "Paste",
+        "icon": "$(paste)"
+      },
+      {
+        "command": "secondary-explorer.revealInFileExplorer",
+        "title": "Reveal in File Explorer",
+        "icon": "$(file-directory)"
+      },
+      {
+        "command": "secondary-explorer.revealInExplorerView",
+        "title": "Reveal in Explorer View",
+        "icon": "$(file-directory)"
+      },
+      {
+        "command": "secondary-explorer.revealInSecondaryExplorer",
+        "title": "Reveal in Secondary Explorer View",
+        "icon": "$(file-directory)"
+      },
+      {
+        "command": "secondary-explorer.copyPath",
+        "title": "Copy Path",
+        "icon": "$(clippy)"
+      },
+      {
+        "command": "secondary-explorer.copyRelativePath",
+        "title": "Copy Relative Path",
+        "icon": "$(clippy)"
+      },
+      {
+        "command": "secondary-explorer.removePath",
+        "title": "Remove From Explorer",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "secondary-explorer.hidePath",
+        "title": "Hide From Explorer",
+        "icon": "$(eye-closed)"
+      },
+      {
+        "command": "secondary-explorer.openInTerminal",
+        "title": "Open in Integrated Terminal",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "secondary-explorer.addToSecondaryExplorer",
+        "title": "Add to Secondary Explorer",
+        "icon": "$(add)"
+      },
+      {
+        "command": "secondary-explorer.viewAsList",
+        "title": "View as List",
+        "icon": "$(list-tree)"
+      },
+      {
+        "command": "secondary-explorer.viewAsTree",
+        "title": "View as Tree",
+        "icon": "$(list-unordered)"
+      },
+      {
+        "command": "secondary-explorer.showEmptyDirectories",
+        "title": "Empty Directories",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "secondary-explorer.hideEmptyDirectories",
+        "title": "✓ Empty Directories",
+        "icon": "$(eye-closed)"
+      },
+      {
+        "command": "secondary-explorer.copyToWorkspaceRoot",
+        "title": "Copy to Workspace Root",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "secondary-explorer.moveToWorkspaceRoot",
+        "title": "Move to Workspace Root",
+        "icon": "$(move)"
+      },
+      {
+        "command": "secondary-explorer.addSelectedToWorkspace",
+        "title": "Add Folder to Workspace...",
+        "icon": "$(add)"
+      }
+    ],
     "configuration": {
       "type": "object",
       "title": "Secondary Explorer",
@@ -55,7 +202,13 @@
           "items": {
             "oneOf": [
               {
-                "type": "string"
+                "type": "string",
+                "examples": [
+                  [
+                    "${workspaceFolder}",
+                    "${workspaceFolder: Source}/src"
+                  ]
+                ]
               },
               {
                 "type": "object",
@@ -89,7 +242,12 @@
                     ],
                     "examples": [
                       [
-                        "**/*.{md,markdown,txt}"
+                        "*.{md,markdown,txt}"
+                      ],
+                      [
+                        "*.png",
+                        "*.jpg",
+                        "*.svg"
                       ],
                       [
                         "*.test.{js,ts}",
@@ -134,6 +292,19 @@
                       "${workspaceFolderBasename}"
                     ],
                     "description": "Optional name for this group. Defaults to folder name."
+                  },
+                  "description": {
+                    "type": "string",
+                    "default": "",
+                    "examples": [
+                      "${workspaceFolder}"
+                    ],
+                    "description": "Provide description of the root directory"
+                  },
+                  "tooltip": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Provide tooltip for the root directory"
                   },
                   "hidden": {
                     "type": "boolean",
@@ -196,6 +367,7 @@
                   {
                     "basePath": "${workspaceFolder}",
                     "name": "All Workspace Files",
+                    "description": "${workspaceFolder}",
                     "hidden": false,
                     "include": [
                       "**/*"
@@ -219,9 +391,11 @@
                   {
                     "basePath": "${workspaceFolder}",
                     "name": "Workspace Docs",
+                    "description": "Documents",
+                    "tooltip": "Shows only markdown and text files",
                     "hidden": false,
                     "include": [
-                      "**/*.{md,markdown,txt,rtf,adoc,asciidoc,restructuredtext,org,html,htm,pdf,docx,odt}"
+                      "*.{md,markdown,txt}"
                     ],
                     "showEmptyDirectories": false,
                     "viewAsList": true,
@@ -265,6 +439,7 @@
               {
                 "basePath": "${workspaceFolder}",
                 "name": "All Workspace Files",
+                "description": "${workspaceFolder}",
                 "hidden": false,
                 "include": [
                   "**/*"
@@ -288,9 +463,11 @@
               {
                 "basePath": "${workspaceFolder}",
                 "name": "Workspace Docs",
+                "description": "Documents",
+                "tooltip": "Shows only markdown and text files",
                 "hidden": false,
                 "include": [
-                  "**/*.{md,markdown,txt,rtf,adoc,asciidoc,restructuredtext,org,html,htm,pdf,docx,odt}"
+                  "*.{md,markdown,txt}"
                 ],
                 "showEmptyDirectories": false,
                 "viewAsList": true,
@@ -391,6 +568,11 @@
               "*.agent.md",
               "*.chatmode.md",
               "*.md"
+            ],
+            [
+              "*.png",
+              "*.jpg",
+              "*.svg"
             ]
           ],
           "description": "Controls the sorting order of items in the explorer."
@@ -422,133 +604,6 @@
         "view": "secondaryExplorerView",
         "contents": "No paths configured.\n[Add Folder to Explorer](command:secondary-explorer.pickPath)",
         "when": "!secondaryExplorer.paths || secondaryExplorer.paths.length == 0"
-      }
-    ],
-    "commands": [
-      {
-        "command": "secondary-explorer.refresh",
-        "title": "Refresh",
-        "icon": "$(refresh)"
-      },
-      {
-        "command": "secondary-explorer.pickPath",
-        "title": "Add File or Folder to Explorer",
-        "icon": "$(add)"
-      },
-      {
-        "command": "secondary-explorer.openSettings",
-        "title": "Settings",
-        "icon": "$(gear)"
-      },
-      {
-        "command": "secondary-explorer.createFile",
-        "title": "New File...",
-        "icon": "$(new-file)"
-      },
-      {
-        "command": "secondary-explorer.createFolder",
-        "title": "New Folder...",
-        "icon": "$(new-folder)"
-      },
-      {
-        "command": "secondary-explorer.deleteEntry",
-        "title": "Delete",
-        "icon": "$(trash)"
-      },
-      {
-        "command": "secondary-explorer.renameEntry",
-        "title": "Rename...",
-        "icon": "$(edit)"
-      },
-      {
-        "command": "secondary-explorer.openFile",
-        "title": "Open File",
-        "icon": "$(eye)"
-      },
-      {
-        "command": "secondary-explorer.openToTheSide",
-        "title": "Open to the Side",
-        "icon": "$(eye)"
-      },
-      {
-        "command": "secondary-explorer.openFolderInNewWindow",
-        "title": "Open in New Window",
-        "icon": "$(link-external)"
-      },
-      {
-        "command": "secondary-explorer.cutEntry",
-        "title": "Cut",
-        "icon": "$(cut)"
-      },
-      {
-        "command": "secondary-explorer.copyEntry",
-        "title": "Copy",
-        "icon": "$(copy)"
-      },
-      {
-        "command": "secondary-explorer.pasteEntry",
-        "title": "Paste",
-        "icon": "$(paste)"
-      },
-      {
-        "command": "secondary-explorer.revealInFileExplorer",
-        "title": "Reveal in File Explorer",
-        "icon": "$(file-directory)"
-      },
-      {
-        "command": "secondary-explorer.copyPath",
-        "title": "Copy Path",
-        "icon": "$(clippy)"
-      },
-      {
-        "command": "secondary-explorer.copyRelativePath",
-        "title": "Copy Relative Path",
-        "icon": "$(clippy)"
-      },
-      {
-        "command": "secondary-explorer.removePath",
-        "title": "Remove From Explorer",
-        "icon": "$(trash)"
-      },
-      {
-        "command": "secondary-explorer.hidePath",
-        "title": "Hide From Explorer",
-        "icon": "$(eye-closed)"
-      },
-      {
-        "command": "secondary-explorer.openInTerminal",
-        "title": "Open in Integrated Terminal",
-        "icon": "$(terminal)"
-      },
-      {
-        "command": "secondary-explorer.addToSecondaryExplorer",
-        "title": "Add to Secondary Explorer",
-        "icon": "$(add)"
-      },
-      {
-        "command": "secondary-explorer.viewAsList",
-        "title": "View as List",
-        "icon": "$(list-tree)"
-      },
-      {
-        "command": "secondary-explorer.viewAsTree",
-        "title": "View as Tree",
-        "icon": "$(list-unordered)"
-      },
-      {
-        "command": "secondary-explorer.copyToWorkspaceRoot",
-        "title": "Copy to Workspace Root",
-        "icon": "$(copy)"
-      },
-      {
-        "command": "secondary-explorer.moveToWorkspaceRoot",
-        "title": "Move to Workspace Root",
-        "icon": "$(move)"
-      },
-      {
-        "command": "secondary-explorer.addSelectedToWorkspace",
-        "title": "Add Folder to Workspace...",
-        "icon": "$(add)"
       }
     ],
     "menus": {
@@ -614,6 +669,14 @@
           "when": "false"
         },
         {
+          "command": "secondary-explorer.revealInExplorerView",
+          "when": "false"
+        },
+        {
+          "command": "secondary-explorer.revealInSecondaryExplorer",
+          "when": "false"
+        },
+        {
           "command": "secondary-explorer.copyPath",
           "when": "false"
         },
@@ -638,6 +701,14 @@
           "when": "false"
         },
         {
+          "command": "secondary-explorer.showEmptyDirectories",
+          "when": "false"
+        },
+        {
+          "command": "secondary-explorer.hideEmptyDirectories",
+          "when": "false"
+        },
+        {
           "command": "secondary-explorer.copyToWorkspaceRoot",
           "when": "false"
         },
@@ -652,6 +723,10 @@
       ],
       "explorer/context": [
         {
+          "command": "secondary-explorer.revealInSecondaryExplorer",
+          "group": "navigation@98"
+        },
+        {
           "command": "secondary-explorer.addToSecondaryExplorer",
           "group": "navigation@99"
         }
@@ -660,6 +735,10 @@
         {
           "command": "secondary-explorer.addToSecondaryExplorer",
           "group": "navigation@99"
+        },
+        {
+          "command": "secondary-explorer.revealInSecondaryExplorer",
+          "group": "2_reveal@99"
         }
       ],
       "view/item/context": [
@@ -694,19 +773,24 @@
           "group": "navigation@6"
         },
         {
-          "command": "secondary-explorer.openInTerminal",
+          "command": "secondary-explorer.revealInExplorerView",
           "when": "view == secondaryExplorerView",
           "group": "navigation@7"
         },
         {
-          "command": "secondary-explorer.openFolderInNewWindow",
-          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
+          "command": "secondary-explorer.openInTerminal",
+          "when": "view == secondaryExplorerView",
           "group": "navigation@8"
+        },
+        {
+          "command": "secondary-explorer.openFolderInNewWindow",
+          "when": "view == secondaryExplorerView",
+          "group": "navigation@9"
         },
         {
           "command": "secondary-explorer.addSelectedToWorkspace",
           "when": "view == secondaryExplorerView",
-          "group": "navigation@9"
+          "group": "navigation@10"
         },
         {
           "command": "secondary-explorer.createFile",
@@ -781,9 +865,19 @@
           "group": "secondaryExplorer@3"
         },
         {
+          "command": "secondary-explorer.showEmptyDirectories",
+          "when": "view == secondaryExplorerView && !secondaryExplorerShowEmptyDirectories",
+          "group": "secondaryExplorer@4"
+        },
+        {
+          "command": "secondary-explorer.hideEmptyDirectories",
+          "when": "view == secondaryExplorerView && secondaryExplorerShowEmptyDirectories",
+          "group": "secondaryExplorer@5"
+        },
+        {
           "command": "secondary-explorer.openSettings",
           "when": "view == secondaryExplorerView",
-          "group": "secondaryExplorer@4"
+          "group": "secondaryExplorer@6"
         },
         {
           "command": "secondary-explorer.createFile",
@@ -845,29 +939,26 @@
     "compile": "webpack",
     "watch": "webpack --watch",
     "package": "webpack --mode production --devtool hidden-source-map",
-    "pretest": "npm run compile-tests && npm run compile && npm run lint",
-    "lint": "eslint src",
-    "format": "prettier --write ."
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
-    "@types/micromatch": "^4.0.9",
+    "@types/micromatch": "^4.0.10",
     "@types/node": "22.x",
-    "@types/vscode": "^1.100.0",
-    "@typescript-eslint/eslint-plugin": "^6.15.0",
-    "eslint": "^10.0.1",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.4",
-    "prettier": "^3.6.2",
-    "ts-loader": "^9.5.2",
-    "typescript": "^5.9.2",
-    "webpack": "^5.101.0",
-    "webpack-cli": "^6.0.1"
+    "@types/vscode": "^1.109.0",
+    "eslint": "^9.39.3",
+    "ts-loader": "^9.2.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.1",
+    "webpack": "^5.105.3",
+    "webpack-cli": "^4.10.0"
   },
   "dependencies": {
     "fast-glob": "^3.3.3",
-    "fs-extra": "^11.3.1",
+    "fs-extra": "^11.3.3",
     "micromatch": "^4.0.8",
-    "trash": "^10.1.0"
+    "trash": "^10.1.1"
   }
 }

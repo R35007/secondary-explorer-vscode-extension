@@ -2,7 +2,7 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { FSItem } from '../models/FSItem';
-import { normalizePath } from '../utils/utils';
+import { getUniqueDestPath, log, normalizePath } from '../utils/utils';
 import { SecondaryExplorerProvider } from './SecondaryExplorerProvider';
 
 export class SecondaryExplorerDragAndDrop implements vscode.TreeDragAndDropController<FSItem> {
@@ -17,11 +17,16 @@ export class SecondaryExplorerDragAndDrop implements vscode.TreeDragAndDropContr
    * in both tree-specific and URI formats so they can
    * be recognized by the explorer and editor.
    */
-  async handleDrag(source: readonly FSItem[], treeDataTransfer: vscode.DataTransfer, token: vscode.CancellationToken) {
-    treeDataTransfer.set('application/vnd.code.tree.secondaryExplorerView', new vscode.DataTransferItem(source.map((s) => s.basePath)));
+  async handleDrag(source: readonly FSItem[], treeDataTransfer: vscode.DataTransfer, _token: vscode.CancellationToken) {
+    try {
+      treeDataTransfer.set('application/vnd.code.tree.secondaryExplorerView', new vscode.DataTransferItem(source.map((s) => s.basePath)));
 
-    const uris = source.map((s) => vscode.Uri.file(s.basePath).toString()).join('\n');
-    treeDataTransfer.set('text/uri-list', new vscode.DataTransferItem(uris));
+      const uris = source.map((s) => vscode.Uri.file(s.basePath).toString()).join('\n');
+      treeDataTransfer.set('text/uri-list', new vscode.DataTransferItem(uris));
+      log(`Dragged items prepared for transfer: ${source.map((s) => s.basePath).join(', ')}`);
+    } catch (err) {
+      log(`Failed to prepare dragged items: ${String(err)}`);
+    }
   }
 
   /**
@@ -29,14 +34,11 @@ export class SecondaryExplorerDragAndDrop implements vscode.TreeDragAndDropContr
    * If the target is a file, returns its parent folder.
    * If inaccessible, returns null and shows an error.
    */
-  private async resolveTargetDir(target: FSItem): Promise<string | null> {
-    try {
-      const stat = await fs.stat(target.basePath);
-      return stat.isDirectory() ? normalizePath(target.basePath) : normalizePath(path.dirname(target.basePath));
-    } catch (err) {
-      vscode.window.showErrorMessage(`Target not accessible: ${String(err)}`);
-      return null;
-    }
+  private async resolveTargetDir(target: FSItem): Promise<string | undefined> {
+    const stat = await fs.stat(target.basePath);
+    const targetDir = stat.isDirectory() ? normalizePath(target.basePath) : normalizePath(path.dirname(target.basePath));
+    log(`Resolved target directory: ${target.basePath} → ${targetDir}`);
+    return targetDir;
   }
 
   private isSameOrSubDir(source: string, targetDir: string): boolean {
@@ -53,26 +55,20 @@ export class SecondaryExplorerDragAndDrop implements vscode.TreeDragAndDropContr
    * or if the destination already exists. Reports progress.
    */
   private async moveItem(filePath: string, targetDir: string, progress?: vscode.Progress<unknown>, cancelToken?: vscode.CancellationToken) {
-    if (cancelToken?.isCancellationRequested) return;
-
-    try {
-      const fileName = path.basename(filePath);
-      const newPath = path.join(targetDir, fileName);
-
-      // Prevent moving a directory into itself or its subdirectories
-      if (this.isSameOrSubDir(filePath, targetDir)) return;
-
-      // Skip if file already exists in target
-      if (await fs.pathExists(newPath)) {
-        vscode.window.showWarningMessage(`File already exists: ${newPath}`);
-        return;
-      }
-
-      await fs.move(filePath, newPath, { overwrite: false });
-      progress?.report({ message: `Moved: ${fileName}` });
-    } catch (err) {
-      vscode.window.showErrorMessage(`Failed to move ${filePath}: ${String(err)}`);
+    if (cancelToken?.isCancellationRequested) {
+      log(`Move operation cancelled by user`);
+      vscode.window.showInformationMessage('Move operation cancelled.');
+      return;
     }
+
+    const fileName = path.basename(filePath);
+    const newPath = await getUniqueDestPath(targetDir, fileName);
+
+    // Prevent moving a directory into itself or its subdirectories
+    if (this.isSameOrSubDir(filePath, targetDir)) return;
+
+    await fs.move(filePath, newPath, { overwrite: false });
+    progress?.report({ message: `Moved: ${fileName}` });
   }
 
   /**
@@ -107,25 +103,28 @@ export class SecondaryExplorerDragAndDrop implements vscode.TreeDragAndDropContr
    * within the explorer or an open action in the editor.
    * Delegates actual work to helper functions for clarity.
    */
-  async handleDrop(target: FSItem | undefined, dataTransfer: vscode.DataTransfer, token: vscode.CancellationToken) {
-    const treeItem = dataTransfer.get('application/vnd.code.tree.secondaryExplorerView');
-    const uriItem = dataTransfer.get('text/uri-list');
+  async handleDrop(target: FSItem | undefined, dataTransfer: vscode.DataTransfer, _token: vscode.CancellationToken) {
+    try {
+      const treeItem = dataTransfer.get('application/vnd.code.tree.secondaryExplorerView');
+      const uriItem = dataTransfer.get('text/uri-list');
 
-    if ((!treeItem && !uriItem) || !target) return;
+      if ((!treeItem && !uriItem) || !target) return;
 
-    const draggedPaths: string[] = treeItem?.value || uriItem?.value.split('\n').filter(Boolean) || [];
-    const normalizedPaths: string[] = draggedPaths.map(decodeURIComponent).map(normalizePath);
-    const targetDir = await this.resolveTargetDir(target);
+      const draggedPaths: string[] = treeItem?.value || uriItem?.value.split('\n').filter(Boolean) || [];
+      const normalizedPaths: string[] = draggedPaths.map(normalizePath);
+      const targetDir = await this.resolveTargetDir(target);
 
-    if (!targetDir || normalizedPaths.length === 0) return;
+      if (!targetDir || normalizedPaths.length === 0) return;
 
-    const hasFolder = normalizedPaths.some((i) => fs.statSync(i).isDirectory());
-    const isSameOrSubDir = normalizedPaths.every((p) => this.isSameOrSubDir(p, targetDir));
-    if (isSameOrSubDir) return;
+      const hasFolder = normalizedPaths.some((i) => fs.statSync(i).isDirectory());
+      const isSameOrSubDir = normalizedPaths.every((p) => this.isSameOrSubDir(p, targetDir));
+      if (isSameOrSubDir) return;
 
-    const showProgress = normalizedPaths.length > 1 || hasFolder;
-    await this.runMove(normalizedPaths, targetDir, showProgress);
-    this.provider.refresh();
-    return;
+      const showProgress = normalizedPaths.length > 1 || hasFolder;
+      await this.runMove(normalizedPaths, targetDir, showProgress);
+      log(`All items moved successfully into: ${targetDir}`);
+    } catch (err) {
+      log(`Failed to complete move operation: ${String(err)}`);
+    }
   }
 }

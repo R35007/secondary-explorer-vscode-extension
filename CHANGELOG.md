@@ -4,6 +4,16 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [11.0.0] - 2026-03-01
+
+- Added `SecondaryExplorer` output channel to display all logs related to the Secondary Explorer.
+- Added `Reveal in Explorer View` to the Secondary Explorer item context menu, allowing items to be revealed in the VS Code native explorer.
+- Added `Reveal in Secondary Explorer View` to the editor title context and the VS Code native file explorer, enabling items to be revealed in the Secondary Explorer.
+- Updated settings behavior: whenever extension settings are triggered through a context menu or command, the extension will update the setting at the **workspace level** if that setting already exists there. If not, it will update the setting at the **global level**.
+- Added `description` and `tooltip` in the folder config. Helps to show detailed information about the configured folder. This description and tooltip will be shown only to the root directory or root file.
+- Update - Now every file and folder will show its absolute path as a tooltip on hovering the item in a Secondary explorer.
+- Improved watcher and refresh handling
+
 ## [10.1.1] - 2026-02-27
 
 - Updated Docs and examples

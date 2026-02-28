@@ -1,11 +1,13 @@
 import fsx from 'fs-extra';
 import path from 'path';
 import * as vscode from 'vscode';
-import { getFormattedPatternPaths, interpolate } from './utils';
+import { getFormattedPatternPaths, interpolate, normalizePath } from './utils';
 
 type UserPaths = {
   basePath?: string;
   name?: string;
+  description?: string | boolean | undefined;
+  tooltip?: string | vscode.MarkdownString | undefined;
   include?: string | string[];
   exclude?: string | string[];
   hidden?: boolean;
@@ -17,6 +19,8 @@ type UserPaths = {
 export type NormalizedPaths = {
   basePath: string;
   name: string;
+  description?: string | boolean | undefined;
+  tooltip?: string | vscode.MarkdownString | undefined;
   include?: string[];
   exclude?: string[];
   hidden?: boolean;
@@ -32,7 +36,15 @@ export class Settings {
   static getSettings(val: string) {
     return Settings.configuration.get(val);
   }
-  static setSettings(key: string, val: any) {
+  static hasWorkspaceSetting(key: string) {
+    const inspect = Settings.configuration.inspect(key);
+    return inspect?.workspaceValue !== undefined || inspect?.workspaceFolderValue !== undefined;
+  }
+
+  static async setSettings(key: string, val: any) {
+    // Update at workspace level if present
+    if (Settings.hasWorkspaceSetting(key)) return Settings.configuration.update(key, val, vscode.ConfigurationTarget.Workspace);
+    // Otherwise update globally
     return Settings.configuration.update(key, val, vscode.ConfigurationTarget.Global);
   }
 
@@ -42,6 +54,9 @@ export class Settings {
 
   static set paths(paths: Array<string | UserPaths>) {
     Settings.setSettings('paths', paths);
+  }
+  static set showEmptyDirectories(value: boolean) {
+    Settings.setSettings('showEmptyDirectories', value);
   }
   static get showEmptyDirectories() {
     return Settings.getSettings('showEmptyDirectories') as boolean;
@@ -65,7 +80,7 @@ export class Settings {
   static get parsedPaths() {
     const paths = Settings.paths;
     const workspaceFolders = vscode.workspace.workspaceFolders || [];
-    const defaultInclude: string[] = ['**/*'];
+    const defaultInclude: string[] = ['*'];
     const defaultExclude: string[] = ['node_modules', 'dist', 'build', 'out'];
 
     const interpolateObject = {
@@ -90,7 +105,11 @@ export class Settings {
       if (typeof p === 'string') {
         const [variable = p, folderName] = extractVariableAndValue(p || '${workspaceFolder}') || [];
         const basePath = interpolate(variable.replace(/\\/g, '/') || '${workspaceFolder}', interpolateObject);
-        const resolvedBasePath = path.resolve(interpolateObject.workspaceFolder, basePath); // resolve with workspace folder to support multiple folders
+
+        if (!basePath) return {} as NormalizedPaths;
+        if (!workspaceFolders.length && !path.isAbsolute(basePath)) return {} as NormalizedPaths;
+
+        const resolvedBasePath = normalizePath(path.resolve(interpolateObject.workspaceFolder, basePath)); // resolve with workspace folder to support multiple folders
         return {
           basePath: resolvedBasePath,
           name: folderName || path.basename(resolvedBasePath),
@@ -100,11 +119,13 @@ export class Settings {
       }
       const [variable = p.basePath, folderName] = extractVariableAndValue(p.basePath || '${workspaceFolder}') || [];
       const basePath = interpolate(variable?.replace(/\\/g, '/') || '${workspaceFolder}', interpolateObject);
-      const resolvedBasePath = path.resolve(interpolateObject.workspaceFolder, basePath); // resolve with workspace folder to support multiple folders
+      const resolvedBasePath = normalizePath(path.resolve(interpolateObject.workspaceFolder, basePath)); // resolve with workspace folder to support multiple folders
       return {
         ...p,
         basePath: resolvedBasePath,
         name: interpolate(p.name || folderName || path.basename(resolvedBasePath), interpolateObject),
+        description: typeof p.description === 'string' ? interpolate(p.description, interpolateObject) : undefined,
+        tooltip: p.tooltip,
         include: getFormattedPatternPaths(([] as string[]).concat(p.include || defaultInclude)),
         exclude: getFormattedPatternPaths(([] as string[]).concat(p.exclude || defaultExclude)),
       };

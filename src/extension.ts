@@ -9,14 +9,19 @@ import { SecondaryExplorerDragAndDrop } from './providers/SecondaryExplorerDargA
 import { SecondaryExplorerProvider } from './providers/SecondaryExplorerProvider';
 import { registerPathWatchers } from './utils/registerPathWatchers';
 import { Settings } from './utils/Settings';
-import { setContext } from './utils/utils';
+import { log, setContext } from './utils/utils';
 
 export function activate(context: vscode.ExtensionContext) {
+  log('Activating Secondary Explorer extension…');
+
   // Restore context key logic for keybindings and view title icons
   setContext('secondaryExplorerHasSelection', false);
-  setContext('secondaryExplorerRootViewAsList', false);
+  setContext('secondaryExplorerRootViewAsList', Settings.viewAsList);
+  setContext('secondaryExplorerShowEmptyDirectories', Settings.showEmptyDirectories);
 
-  const provider = new SecondaryExplorerProvider(context);
+  const provider = new SecondaryExplorerProvider();
+  log('SecondaryExplorerProvider created');
+
   const treeView = vscode.window.createTreeView('secondaryExplorerView', {
     treeDataProvider: provider,
     showCollapseAll: true,
@@ -24,9 +29,14 @@ export function activate(context: vscode.ExtensionContext) {
     dragAndDropController: new SecondaryExplorerDragAndDrop(provider),
   });
   context.subscriptions.push(treeView);
+  log('TreeView registered');
 
   registerCommands(context, provider, treeView);
-  registerPathWatchers(context, provider, Settings.parsedPaths);
+  log('Commands registered');
+
+  if (Settings.parsedPaths.length) {
+    registerPathWatchers(context, provider, Settings.parsedPaths);
+  }
 
   // Dynamically set view title if only one folder
   function updateViewTitle() {
@@ -43,14 +53,27 @@ export function activate(context: vscode.ExtensionContext) {
 
   updateViewTitle();
   vscode.workspace.onDidChangeConfiguration((e) => {
+    if (
+      e.affectsConfiguration('secondaryExplorer.paths') ||
+      e.affectsConfiguration('secondaryExplorer.deleteBehavior') ||
+      e.affectsConfiguration('secondaryExplorer.viewAsList') ||
+      e.affectsConfiguration('secondaryExplorer.showEmptyDirectories') ||
+      e.affectsConfiguration('secondaryExplorer.rootPathSortOrder') ||
+      e.affectsConfiguration('secondaryExplorer.itemsSortOrderPattern')
+    ) {
+      log('Configuration changed!');
+      provider.refresh();
+    }
     if (e.affectsConfiguration('secondaryExplorer.paths')) {
       registerPathWatchers(context, provider, Settings.parsedPaths);
       updateViewTitle();
     }
-    provider.refresh();
   });
 
   context.subscriptions.push(treeView.onDidChangeSelection((e) => setContext('secondaryExplorerHasSelection', e.selection.length > 0)));
+  log('Secondary Explorer extension activated successfully');
 }
 
-export function deactivate() {}
+export function deactivate() {
+  log('Secondary Explorer extension deactivated');
+}

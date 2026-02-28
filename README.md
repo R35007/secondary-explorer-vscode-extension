@@ -8,7 +8,7 @@
 
 ## Preview
 
-<img src="./images/preview.png" width="1000px">
+<img src="./images/preview.jpg" width="1000px">
 
 ---
 
@@ -59,6 +59,8 @@
 - **Cut/Copy/Paste**: Use context menu or keyboard shortcuts to move or duplicate files/folders.
 - **Drag And Drop**: Drag files/folders to move them within the secondary explorer.
 - **Reveal in File Explorer**: Right-click to reveal any file/folder in your OS file explorer.
+- **Reveal in Explorer View**: Right-click to reveal any file/folder in vscode file explorer view.
+- **Reveal in Secondary Explorer View**: Right-click to reveal any file/folder in secondary explorer view.
 - **Copy Path/Relative Path**: Right-click to copy absolute or relative path to clipboard.
 - **Open Folder in New Window**: Right-click any file or folder to open it in a new VS Code window.
 - **Open In Integrated Terminal**: Right-click any file or folder to open it in a VS Code Integrated Terminal.
@@ -113,6 +115,8 @@ You can configure which folders and files appear in the **Secondary Explorer** t
     {
       "basePath": "${workspaceFolder}", // supports variables like ${workspaceFolder}, ${userHome}
       "name": "${workspaceFolderName} - Docs", // dynamic labels
+      "description": "${workspaceFolder}", // Shows only on the root item
+      "tooltip": "Workspace Folder", // Shows only on the root item. By default shows the absolute path of the item
       "hidden": false, // hide this folder if true
       "showEmptyDirectories": false, // override global empty directory setting
       "viewAsList": true, // force list view for this path
@@ -144,7 +148,9 @@ You can configure which folders and files appear in the **Secondary Explorer** t
     {
       "basePath": "${userHome}/repo",
       "name": "${workspaceFolderName} Docs",
-      "include": ["**/*.{md,markdown,txt,rtf,adoc,asciidoc,restructuredtext,org,html,htm,pdf,docx,odt}"],
+      "description": "Documents"
+      "tooltip": "Shows only markdown and text files"
+      "include": ["**/*.{md,markdown,txt}"],
     },
     {
       "basePath": "${workspaceFolder}",
@@ -191,7 +197,7 @@ You can configure which folders and files appear in the **Secondary Explorer** t
 > ```json
 > {
 >   "basePath": ["${userHome}/Documents"],
->   "include": ["**/*.md"]
+>   "include": ["*.md"]
 > }
 > ```
 >
