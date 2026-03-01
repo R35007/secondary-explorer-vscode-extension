@@ -92,7 +92,8 @@ You can also toggle the view mode from the view title toolbar:
 
 You can configure which folders and files appear in the **Secondary Explorer** through VS Code settings. Multi-root workspaces are supported:
 
-- Use `${workspaceFolder}` to target every root folder.
+- Use `${workspaceFolder}` to target first workspace folder.
+- Use `${workspaceFolders[<WorkspaceFolderIndex>]}` - Eg: `${workspaceFolders[1]}` - to target specific workspace folder using index.
 - Use `${workspaceFolder:FolderName}` to target a specific workspace folder with a custom name to show in the explorer. Eg: `${workspaceFolder:Docs}`.
 - Use `${workspaceFolderName}` or `${workspaceFolderBasename}` inside `name` values for dynamic labels.
 - Use `${userHome}` to reference the user’s home directory (recommended on macOS instead of `~`).
@@ -105,15 +106,15 @@ You can configure which folders and files appear in the **Secondary Explorer** t
 {
   "secondaryExplorer.paths": [
     // Simple paths
-    "${workspaceFolder}/docs",
-    "${workspaceFolder:Docs}/guides",
+    "${workspaceFolders[0]}/docs",
+    "${workspaceFolders[0]:Docs}/guides",
     "${userHome}/notes",
     "C:/path/to/folder",
     "C:/path/to/folder/file.txt",
 
     // Rich object configuration
     {
-      "basePath": "${workspaceFolder}", // supports variables like ${workspaceFolder}, ${userHome}
+      "basePath": "${workspaceFolders[0]}", // supports variables like ${workspaceFolder}, ${workspaceFolders[1]} ${userHome}
       "name": "${workspaceFolderName} - Docs", // dynamic labels
       "description": "${workspaceFolder}", // Shows only on the root item
       "tooltip": "Workspace Folder", // Shows only on the root item. By default shows the absolute path of the item
@@ -153,14 +154,14 @@ You can configure which folders and files appear in the **Secondary Explorer** t
       "include": ["**/*.{md,markdown,txt}"],
     },
     {
-      "basePath": "${workspaceFolder}",
+      "basePath": "${workspaceFolders[0]}",
       "name": "Workspace Images",
       "include": ["**/*.{png,jpg,jpeg,gif,svg,webp,avif,bmp,tiff,ico,icns,heic,heif}"],
       "viewAsList": true,
       "sortOrderPattern": ["*.png", "*.jpg", "*.jpeg", "*.gif", "*.svg"],
     },
     {
-      "basePath": "${workspaceFolder}",
+      "basePath": "${workspaceFolders[1]}",
       "name": "Workspace Tests",
       "showEmptyDirectories": false,
       "include": ["*.test.{js,ts,tsx,jsx}", "*.spec.{js,ts,tsx,jsx}"],

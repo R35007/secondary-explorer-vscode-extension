@@ -1,9 +1,17 @@
 import fsx from 'fs-extra';
 import path from 'path';
 import * as vscode from 'vscode';
-import { getFormattedPatternPaths, interpolate, normalizePath } from './utils';
+import { defaultExclude, defaultInclude, workspaceFolders } from './constants';
+import {
+  extractVariableAndValue,
+  getFormattedPatternPaths,
+  getInterpolateObject,
+  getSettingSaveTarget,
+  interpolate,
+  normalizePath,
+} from './utils';
 
-type UserPaths = {
+export type UserPaths = {
   basePath?: string;
   name?: string;
   description?: string | boolean | undefined;
@@ -27,9 +35,13 @@ export type NormalizedPaths = {
   showEmptyDirectories?: boolean;
   viewAsList?: boolean;
   sortOrderPattern?: string[];
+  rootIndex?: number;
 };
 
 export class Settings {
+  // This lives only as long as the current window/session
+  public static _sessionTarget: vscode.ConfigurationTarget | undefined;
+
   static get configuration() {
     return vscode.workspace.getConfiguration('secondaryExplorer');
   }
@@ -41,11 +53,25 @@ export class Settings {
     return inspect?.workspaceValue !== undefined || inspect?.workspaceFolderValue !== undefined;
   }
 
+  static get hasWorkspacePathSetting() {
+    return Settings.hasWorkspaceSetting('paths');
+  }
+
   static async setSettings(key: string, val: any) {
-    // Update at workspace level if present
-    if (Settings.hasWorkspaceSetting(key)) return Settings.configuration.update(key, val, vscode.ConfigurationTarget.Workspace);
-    // Otherwise update globally
-    return Settings.configuration.update(key, val, vscode.ConfigurationTarget.Global);
+    // 1. If the setting already exists in the workspace, update it there (No prompt)
+    if (Settings.hasWorkspaceSetting(key)) {
+      return Settings.configuration.update(key, val, vscode.ConfigurationTarget.Workspace);
+    }
+
+    // 2. If we haven't asked the user in THIS session yet, prompt them
+    if (Settings._sessionTarget === undefined) {
+      const choice = await getSettingSaveTarget();
+      if (!choice) return;
+      Settings._sessionTarget = choice;
+    }
+
+    // 3. Save using the choice made in this session
+    return Settings.configuration.update(key, val, Settings._sessionTarget);
   }
 
   static get paths() {
@@ -79,31 +105,13 @@ export class Settings {
 
   static get parsedPaths() {
     const paths = Settings.paths;
-    const workspaceFolders = vscode.workspace.workspaceFolders || [];
-    const defaultInclude: string[] = ['*'];
-    const defaultExclude: string[] = ['node_modules', 'dist', 'build', 'out'];
-
-    const interpolateObject = {
-      workspaceFolder: workspaceFolders[0]?.uri.fsPath || '',
-      workspaceFolderName: workspaceFolders[0]?.name || '',
-      workspaceFolderBasename: path.basename(workspaceFolders[0]?.uri.fsPath || ''),
-      userHome: process.env.HOME || process.env.USERPROFILE || '',
-    };
-
-    function extractVariableAndValue(input: string) {
-      // Match ${variableName: value} followed by optional suffix
-      const match = input.match(/\$\{([^:}]+):\s*([^}]*)\}([^\s]*)?/);
-      if (!match) return null;
-
-      const variableWithSuffix = `\${${match[1].trim()}}${match[3] || ''}`;
-      const value = match[2].trim();
-      return [variableWithSuffix, value];
-    }
 
     // get Normalized paths
-    const normalized: NormalizedPaths[] = paths.map((p) => {
+    const normalized: NormalizedPaths[] = paths.map((p, index) => {
+      const interpolateObject = getInterpolateObject();
+
       if (typeof p === 'string') {
-        const [variable = p, folderName] = extractVariableAndValue(p || '${workspaceFolder}') || [];
+        const [variable, folderName] = extractVariableAndValue(p || '${workspaceFolder}') || [];
         const basePath = interpolate(variable.replace(/\\/g, '/') || '${workspaceFolder}', interpolateObject);
 
         if (!basePath) return {} as NormalizedPaths;
@@ -111,17 +119,19 @@ export class Settings {
 
         const resolvedBasePath = normalizePath(path.resolve(interpolateObject.workspaceFolder, basePath)); // resolve with workspace folder to support multiple folders
         return {
+          rootIndex: index,
           basePath: resolvedBasePath,
           name: folderName || path.basename(resolvedBasePath),
           include: getFormattedPatternPaths(defaultInclude),
           exclude: getFormattedPatternPaths(defaultExclude),
         };
       }
-      const [variable = p.basePath, folderName] = extractVariableAndValue(p.basePath || '${workspaceFolder}') || [];
+      const [variable, folderName] = extractVariableAndValue(p.basePath || '${workspaceFolder}') || [];
       const basePath = interpolate(variable?.replace(/\\/g, '/') || '${workspaceFolder}', interpolateObject);
       const resolvedBasePath = normalizePath(path.resolve(interpolateObject.workspaceFolder, basePath)); // resolve with workspace folder to support multiple folders
       return {
         ...p,
+        rootIndex: index,
         basePath: resolvedBasePath,
         name: interpolate(p.name || folderName || path.basename(resolvedBasePath), interpolateObject),
         description: typeof p.description === 'string' ? interpolate(p.description, interpolateObject) : undefined,

@@ -187,17 +187,17 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
     const pathObj = this.explorerPaths[0];
     const stat = await fs.stat(pathObj.basePath);
 
-    return stat.isFile() ? [new FSItem({ ...pathObj, isRoot: true, rootIndex: 0 })] : await this.getChildrenItems(new FSItem(pathObj));
+    return stat.isFile() ? [new FSItem({ ...pathObj, isRoot: true })] : await this.getChildrenItems(new FSItem(pathObj));
   }
 
   async renderRootItems() {
     if (this.explorerPaths.length === 1) return await this.renderSingleRoot();
     // Multiple valid paths: show each as root (file or folder)
     const items: FSItem[] = [];
-    for (const [rootIndex, pathObj] of this.explorerPaths.entries()) {
+    for (const [_, pathObj] of this.explorerPaths.entries()) {
       const [_, error] = await safePromise(fs.stat(pathObj.basePath));
       if (error) continue;
-      items.push(new FSItem({ ...pathObj, isRoot: true, rootIndex }));
+      items.push(new FSItem({ ...pathObj, isRoot: true }));
     }
     return Settings.rootPathSortOrder === 'default' ? items : this.getRootSortedItems(items);
   }

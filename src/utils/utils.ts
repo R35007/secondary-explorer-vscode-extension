@@ -9,19 +9,20 @@ export function log(logString: string) {
   secondaryExplorerOutputChannel.appendLine(logString);
 }
 
-export function splitNameExt(filename: string) {
+export function getSeparators() {
+  const config = vscode.workspace.getConfiguration('explorer');
+  const copyPathSeparator: string = config.get<string>('copyPathSeparator') || path.sep;
+  const copyRelativePathSeparator: string = config.get<string>('copyRelativePathSeparator') || path.sep;
+  return {
+    copyPathSeparator: copyPathSeparator === 'auto' ? path.sep : copyPathSeparator,
+    copyRelativePathSeparator: copyRelativePathSeparator === 'auto' ? path.sep : copyRelativePathSeparator,
+  };
+}
+
+function splitNameExt(filename: string) {
   const ext = path.extname(filename);
   const name = ext ? filename.slice(0, -ext.length) : filename;
   return { name, ext };
-}
-
-export async function existsAsync(p: string): Promise<boolean> {
-  try {
-    await fsx.access(p);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 export async function exists(p: string): Promise<boolean> {
@@ -35,23 +36,34 @@ export async function exists(p: string): Promise<boolean> {
 
 export function normalizePath(input: string): string {
   return decodeURIComponent(input)
-    .replace(/[\\/]+/g, path.sep)
+    .replace(/[\\/]+/g, getSeparators().copyPathSeparator)
+    .replace('file:' + getSeparators().copyPathSeparator, '')
     .replace('file:' + path.sep, '')
     .trim();
 }
 
-export function replaceVariablePath(filePath: string, userHome: string, workspaceFolder?: string) {
-  const normalizeDriveLetter = (path: string) => path.replace(/^([a-zA-Z]):/, (match, drive) => drive.toLowerCase() + ':');
+export function resolveVariables(input: string, hasWorkspaceSetting?: boolean): string {
+  const normInput = normalizePath(input);
+  const interpolateObject = getInterpolateObject();
+  const home = normalizePath(interpolateObject.userHome);
+  const lowInput = normInput.toLowerCase();
 
-  const normalizedFilePath = normalizePath(normalizeDriveLetter(filePath));
-  const normalizedUserHome = normalizePath(normalizeDriveLetter(userHome));
-  const normalizedWorkspaceFolder = workspaceFolder ? normalizePath(normalizeDriveLetter(workspaceFolder)) : '';
+  if (hasWorkspaceSetting) {
+    const targets = [
+      ...interpolateObject.workspaceFolders.map((p, i) => ({
+        path: normalizePath(p),
+        key: `\${workspaceFolders[${i}]}`,
+      })),
+      { path: home, key: '${userHome}' },
+    ].sort((a, b) => b.path.length - a.path.length);
 
-  if (normalizedWorkspaceFolder) {
-    return normalizedFilePath.replace(normalizedWorkspaceFolder, '${workspaceFolder}').replace(normalizedUserHome, '${userHome}');
+    const match = targets.find((t) => t.path && lowInput.startsWith(t.path.toLowerCase()));
+    return match ? normInput.replace(new RegExp(match.path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), match.key) : normInput;
   }
 
-  return normalizedFilePath.replace(normalizedUserHome, '${userHome}');
+  return home && lowInput.startsWith(home.toLowerCase())
+    ? normInput.replace(new RegExp(home.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), '${userHome}')
+    : normInput;
 }
 
 // Helps to convert template literal strings to applied values.
@@ -109,10 +121,55 @@ export function setContext(key: string, value: any) {
 export async function getUniqueDestPath(rootPath: string, baseName: string): Promise<string> {
   let destPath = path.join(rootPath, baseName);
   let fileIdx = 1;
-  while (await existsAsync(destPath)) {
+  while (await exists(destPath)) {
     const { name, ext } = splitNameExt(baseName);
     destPath = path.join(rootPath, `${name}_${fileIdx}${ext}`);
     fileIdx++;
   }
   return destPath;
+}
+
+export function getWorkspaceFolderIndex(fsPath: string): number | undefined {
+  const uri = vscode.Uri.file(fsPath);
+  const folder = vscode.workspace.getWorkspaceFolder(uri);
+  if (!folder) return undefined; // Path is outside all workspace folders
+  const index = vscode.workspace.workspaceFolders?.findIndex((f) => f.uri.toString() === folder.uri.toString());
+  return index;
+}
+
+export function extractVariableAndValue(input: string): [string, string] {
+  // Match ${variableName: value} followed by optional suffix
+  const match = input.match(/\$\{([^:}]+):\s*([^}]*)\}([^\s]*)?/);
+  if (!match) return [input, ''];
+
+  const variable = `\${${match[1].trim()}}${match[3] || ''}`;
+  const FolderName = match[2].trim();
+  return [variable, FolderName];
+}
+
+export function getInterpolateObject() {
+  const workspaceFolders = vscode.workspace.workspaceFolders || [];
+  return {
+    workspaceFolders: workspaceFolders?.map((wf) => normalizePath(wf.uri.fsPath)) || [],
+    workspaceFolder: normalizePath(workspaceFolders[0]?.uri.fsPath || ''),
+    workspaceFolderName: workspaceFolders[0]?.name || '',
+    workspaceFolderBasename: path.basename(workspaceFolders[0]?.uri.fsPath || ''),
+    userHome: normalizePath(process.env.HOME || process.env.USERPROFILE || ''),
+  };
+}
+
+export async function getSettingSaveTarget() {
+  const choice = await vscode.window.showInformationMessage(
+    'Secondary Explorer Settings',
+    {
+      modal: true,
+      detail: `Where should new settings be saved for this session?
+              You won't be prompted again if the setting is already available in your workspace.`,
+    },
+    'User (Global)',
+    'Workspace',
+  );
+
+  if (!choice) return;
+  return choice === 'Workspace' ? vscode.ConfigurationTarget.Workspace : vscode.ConfigurationTarget.Global;
 }

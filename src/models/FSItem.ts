@@ -88,7 +88,7 @@ export class FSItem extends vscode.TreeItem {
     const parsedPaths = Settings.parsedPaths;
 
     const withinParsedPathsIndex = parsedPaths.findIndex(({ basePath }) => {
-      return basePath === normalizedFsPath || normalizedFsPath.startsWith(basePath + path.sep);
+      return basePath === normalizedFsPath || normalizedFsPath.startsWith(normalizePath(basePath + path.sep));
     });
 
     if (withinParsedPathsIndex < 0) return;

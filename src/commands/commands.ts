@@ -4,58 +4,59 @@ import * as vscode from 'vscode';
 import { FSItem } from '../models/FSItem';
 import { SecondaryExplorerProvider } from '../providers/SecondaryExplorerProvider';
 import { isWindows, windowsInvalidName } from '../utils/constants';
-import { Settings } from '../utils/Settings';
-import { exists, getSelectedItems, getUniqueDestPath, log, normalizePath, replaceVariablePath, setContext } from '../utils/utils';
+import { Settings, UserPaths } from '../utils/Settings';
+import {
+  exists,
+  getSelectedItems,
+  getSeparators,
+  getSettingSaveTarget,
+  getUniqueDestPath,
+  log,
+  normalizePath,
+  resolveVariables,
+  setContext,
+} from '../utils/utils';
 const trash = require('trash').default;
 
 export function registerCommands(context: vscode.ExtensionContext, provider: SecondaryExplorerProvider, treeView: vscode.TreeView<FSItem>) {
   let clipboard: { type: 'cut' | 'copy'; items: FSItem[] } | null = null; // Clipboard state for cut/copy/paste
   let lastOpenedFile: string | null = null;
 
-  const addToSecondaryExplorer = async (uriOrUris: vscode.Uri | vscode.Uri[]) => {
+  const addToSecondaryExplorer = async (uri: vscode.Uri) => {
     try {
-      const uris: vscode.Uri[] = Array.isArray(uriOrUris) ? uriOrUris : uriOrUris ? [uriOrUris] : [];
-
-      if (!uris.length) return;
-
-      const hasWorkspaceSetting = Settings.hasWorkspaceSetting('paths');
-      const workspaceRoot = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
+      let uris = [uri];
       const userHome = process.env.HOME || process.env.USERPROFILE || '';
 
-      const pathsToAdd = uris.map((u) => replaceVariablePath(u.fsPath, userHome, hasWorkspaceSetting ? workspaceRoot : ''));
+      if (!uri) {
+        const picked = await vscode.window.showOpenDialog({
+          canSelectFolders: true,
+          canSelectFiles: true,
+          canSelectMany: true,
+          defaultUri: vscode.workspace?.workspaceFolders?.[0].uri || vscode.Uri.file(userHome),
+        });
+
+        if (!picked) return;
+        uris = picked;
+      }
+
+      // 2. If we haven't asked the user in THIS session yet, prompt them
+      if (!Settings.hasWorkspacePathSetting && Settings._sessionTarget === undefined) {
+        const choice = await getSettingSaveTarget();
+        if (!choice) return;
+        Settings._sessionTarget = choice;
+      }
+
+      const pathsToAdd = uris
+        .filter(Boolean)
+        .map((u) =>
+          resolveVariables(u.fsPath, Settings.hasWorkspacePathSetting || Settings._sessionTarget === vscode.ConfigurationTarget.Workspace),
+        );
 
       const existing = Settings.paths;
       Settings.paths = [...new Set([...existing, ...pathsToAdd])];
       log(`Added paths to Secondary Explorer: ${pathsToAdd.join(', ')}`);
     } catch (err) {
       log(`Failed to add paths to Secondary Explorer: ${String(err)}`);
-    }
-  };
-
-  const pickPath = async () => {
-    try {
-      const hasWorkspaceFolders = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0;
-      const defaultUri = hasWorkspaceFolders ? vscode.workspace?.workspaceFolders?.[0].uri : vscode.Uri.file(require('os').homedir());
-      const picked = await vscode.window.showOpenDialog({
-        canSelectFolders: true,
-        canSelectFiles: true,
-        canSelectMany: true,
-        defaultUri,
-      });
-
-      if (!picked?.length) return;
-
-      const hasWorkspaceSetting = Settings.hasWorkspaceSetting('paths');
-      const workspaceRoot = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
-      const userHome = process.env.HOME || process.env.USERPROFILE || '';
-
-      const pickedPaths = picked.map((u) => replaceVariablePath(u.fsPath, userHome, hasWorkspaceSetting ? workspaceRoot : ''));
-
-      const existing = Settings.paths;
-      Settings.paths = [...new Set([...existing, ...pickedPaths])];
-      log(`Picked new paths and added to Secondary Explorer: ${pickedPaths.join(', ')}`);
-    } catch (err) {
-      log(`Failed to pick paths for Secondary Explorer: ${String(err)}`);
     }
   };
 
@@ -116,6 +117,7 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
       log(`Failed to remove root path from Secondary Explorer: ${String(err)}`);
     }
   };
+
   const hidePath = async (item?: FSItem) => {
     try {
       const treeViewItem = item || getSelectedItems(treeView).at(-1);
@@ -123,23 +125,19 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
 
       if (treeViewItem.rootIndex < 0) return;
 
-      const hasWorkspaceSetting = Settings.hasWorkspaceSetting('paths');
-      const workspaceRoot = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
-      const userHome = process.env.HOME || process.env.USERPROFILE || '';
-
-      const workspaceBasePath = replaceVariablePath(treeViewItem.basePath, userHome, hasWorkspaceSetting ? workspaceRoot : '');
-
       const newPaths = [...Settings.paths];
-      newPaths[treeViewItem.rootIndex] = {
-        hidden: true,
-        basePath: workspaceBasePath,
-        include: treeViewItem.include,
-        exclude: treeViewItem.exclude,
-        name: treeViewItem.label as string,
-        showEmptyDirectories: treeViewItem.showEmptyDirectories,
-        viewAsList: treeViewItem.viewAsList,
-        sortOrderPattern: treeViewItem.sortOrderPattern,
-      };
+
+      if (typeof newPaths[treeViewItem.rootIndex] === 'string') {
+        newPaths[treeViewItem.rootIndex] = {
+          hidden: true,
+          basePath: newPaths[treeViewItem.rootIndex] as string,
+        };
+      } else {
+        newPaths[treeViewItem.rootIndex] = {
+          hidden: true,
+          ...(newPaths[treeViewItem.rootIndex] as UserPaths),
+        };
+      }
 
       Settings.paths = newPaths;
       vscode.window.setStatusBarMessage('Path set to hidden from Secondary Explorer', 1500);
@@ -324,7 +322,8 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
     try {
       const treeViewItem = item || getSelectedItems(treeView).at(-1);
       if (!treeViewItem) return;
-      await vscode.env.clipboard.writeText(treeViewItem.basePath.replace(/\\/g, '/'));
+      const { copyPathSeparator } = getSeparators();
+      await vscode.env.clipboard.writeText(treeViewItem.basePath.replace(/[\/\\]/g, copyPathSeparator));
       vscode.window.setStatusBarMessage('Path copied to clipboard', 1500);
       log(`Copied path to clipboard: ${treeViewItem.basePath}`);
     } catch (err) {
@@ -337,13 +336,17 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
       const treeViewItem = item || getSelectedItems(treeView).at(-1);
       if (!treeViewItem) return;
 
+      const { copyRelativePathSeparator } = getSeparators();
+
       const nearestRootPath =
-        Settings.parsedPaths.find((p) =>
-          treeViewItem.basePath.replace(/\\/g, '/').toLowerCase().startsWith(p.basePath.replace(/\\/g, '/').toLowerCase()),
+        provider.explorerPaths.find((p) =>
+          normalizePath(treeViewItem.basePath).toLowerCase().startsWith(normalizePath(p.basePath).toLowerCase()),
         )?.basePath || treeViewItem.basePath;
-      const relativePath = path.relative(nearestRootPath, treeViewItem.basePath).replace(/\\/g, '/') || path.basename(nearestRootPath);
+
+      const relativePath = path.relative(nearestRootPath, treeViewItem.basePath) || path.basename(nearestRootPath);
       const copyText = treeViewItem.contextValue === 'root' ? relativePath : `${path.basename(nearestRootPath)}/${relativePath}`;
-      await vscode.env.clipboard.writeText(copyText);
+
+      await vscode.env.clipboard.writeText(copyText.replace(/[\/\\]/g, copyRelativePathSeparator));
       vscode.window.setStatusBarMessage('Relative path copied to clipboard', 1500);
       log(`Copied relative path to clipboard: ${copyText}`);
     } catch (err) {
@@ -384,7 +387,7 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
 
       if (isFolder) {
         // Check if nested rename (contains path separators)
-        const isNested = rel.includes(path.sep);
+        const isNested = rel.includes(getSeparators().copyPathSeparator || path.sep) || rel.includes(path.sep);
 
         if (!isNested) {
           // Simple folder rename
@@ -700,12 +703,17 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
     showEmptyDirectories: () => toggleShowEmptyDirectories(),
     hideEmptyDirectories: () => toggleShowEmptyDirectories(),
     refresh: () => provider.refresh?.(),
-    openSettings: () => vscode.commands.executeCommand('workbench.action.openSettings', ' @ext:thinker.secondary-explorer '),
+    openSettings: () =>
+      vscode.commands.executeCommand(
+        Settings.hasWorkspacePathSetting || Settings._sessionTarget === vscode.ConfigurationTarget.Workspace
+          ? 'workbench.action.openWorkspaceSettings'
+          : 'workbench.action.openSettings',
+        ' @ext:thinker.secondary-explorer ',
+      ),
     revealInFileExplorer: (item: FSItem) => vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(item.basePath)),
     revealInExplorerView,
     revealInSecondaryExplorer,
     addToSecondaryExplorer,
-    pickPath,
     openInTerminal,
     openFolderInNewWindow,
     removePath,

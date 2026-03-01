@@ -51,11 +51,6 @@
         "icon": "$(refresh)"
       },
       {
-        "command": "secondary-explorer.pickPath",
-        "title": "Add File or Folder to Explorer",
-        "icon": "$(add)"
-      },
-      {
         "command": "secondary-explorer.openSettings",
         "title": "Settings",
         "icon": "$(gear)"
@@ -205,6 +200,8 @@
                 "type": "string",
                 "examples": [
                   [
+                    "${workspaceFolders[0]}",
+                    "${workspaceFolders[1]: Source}/src",
                     "${workspaceFolder}",
                     "${workspaceFolder: Source}/src"
                   ]
@@ -217,6 +214,8 @@
                     "type": "string",
                     "default": "${workspaceFolder}",
                     "examples": [
+                      "${workspaceFolders[0]}",
+                      "${workspaceFolders[1]: Source}/src",
                       "${workspaceFolder}",
                       "${workspaceFolder: Source}/src",
                       "${userHome}",
@@ -362,6 +361,8 @@
                 "examples": [
                   "${workspaceFolder}",
                   "${workspaceFolder: Source}/src",
+                  "${workspaceFolders[1]}",
+                  "${workspaceFolders[1]: Source}/src",
                   "${userHome}",
                   "${userHome: User Home}",
                   {
@@ -389,7 +390,7 @@
                     ]
                   },
                   {
-                    "basePath": "${workspaceFolder}",
+                    "basePath": "${workspaceFolders[1]}",
                     "name": "Workspace Docs",
                     "description": "Documents",
                     "tooltip": "Shows only markdown and text files",
@@ -434,6 +435,8 @@
             [
               "${workspaceFolder}",
               "${workspaceFolder: Source}/src",
+              "${workspaceFolders[1]}",
+              "${workspaceFolders[1]: Source}/src",
               "${userHome}",
               "${userHome: User Home}",
               {
@@ -461,7 +464,7 @@
                 ]
               },
               {
-                "basePath": "${workspaceFolder}",
+                "basePath": "${workspaceFolders[1]}",
                 "name": "Workspace Docs",
                 "description": "Documents",
                 "tooltip": "Shows only markdown and text files",
@@ -602,7 +605,7 @@
     "viewsWelcome": [
       {
         "view": "secondaryExplorerView",
-        "contents": "No paths configured.\n[Add Folder to Explorer](command:secondary-explorer.pickPath)",
+        "contents": "No paths configured.\n[Add Folder to Explorer](command:secondary-explorer.addToSecondaryExplorer)",
         "when": "!secondaryExplorer.paths || secondaryExplorer.paths.length == 0"
       }
     ],
@@ -614,10 +617,6 @@
         },
         {
           "command": "secondary-explorer.addToSecondaryExplorer",
-          "when": "false"
-        },
-        {
-          "command": "secondary-explorer.pickPath",
           "when": "false"
         },
         {
@@ -850,7 +849,7 @@
       ],
       "view/title": [
         {
-          "command": "secondary-explorer.pickPath",
+          "command": "secondary-explorer.addToSecondaryExplorer",
           "when": "view == secondaryExplorerView",
           "group": "secondaryExplorer@1"
         },

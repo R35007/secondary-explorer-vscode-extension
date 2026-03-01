@@ -4,6 +4,15 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [12.0.0] - 2026-03-01
+
+- Added - `workspaceFolders[index]` variable to target specific workspace folders via index. Example: `workspaceFolders[0]`, `workspaceFolders[1]`
+- Removed - `secondary-explorer.pickPath` command (now handled internally by `secondary-explorer.addToSecondaryExplorer`).
+- Updated - `Copy Path` and `Copy Relative Path` to respect VS Code path separator settings.
+- Fixed - Index mapping issues when using the **Hide From Explorer** and **Remove From Explorer** commands.
+- Fixed - Data sync issue to ensure hiding root items no longer creates "junk" data in settings.
+- Enhanced - Settings experience now prompts once per session to choose between **User** or **Workspace** level saves.
+
 ## [11.0.0] - 2026-03-01
 
 - Added `SecondaryExplorer` output channel to display all logs related to the Secondary Explorer.
