@@ -62,11 +62,14 @@ export function activate(context: vscode.ExtensionContext) {
       e.affectsConfiguration('secondaryExplorer.itemsSortOrderPattern')
     ) {
       log('Configuration changed!');
+
+      if (e.affectsConfiguration('secondaryExplorer.paths')) {
+        provider.loadPaths();
+        registerPathWatchers(context, provider, Settings.parsedPaths);
+        updateViewTitle();
+      }
+
       provider.refresh();
-    }
-    if (e.affectsConfiguration('secondaryExplorer.paths')) {
-      registerPathWatchers(context, provider, Settings.parsedPaths);
-      updateViewTitle();
     }
   });
 
