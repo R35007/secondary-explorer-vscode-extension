@@ -3,8 +3,8 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { FSItem } from '../models/FSItem';
 import { SecondaryExplorerProvider } from '../providers/SecondaryExplorerProvider';
-import { isWindows, windowsInvalidName } from '../utils/constants';
-import { Settings, UserPaths } from '../utils/Settings';
+import { isWindows, NO_TAGS, windowsInvalidName } from '../utils/constants';
+import { Settings } from '../utils/Settings';
 import {
   exists,
   getSelectedItems,
@@ -13,8 +13,8 @@ import {
   getUniqueDestPath,
   log,
   normalizePath,
+  pickTags,
   resolveVariables,
-  setContext,
 } from '../utils/utils';
 const trash = require('trash').default;
 
@@ -52,8 +52,7 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
           resolveVariables(u.fsPath, Settings.hasWorkspacePathSetting || Settings._sessionTarget === vscode.ConfigurationTarget.Workspace),
         );
 
-      const existing = Settings.paths;
-      Settings.paths = [...new Set([...existing, ...pathsToAdd])];
+      Settings.paths = [...Settings.paths, ...pathsToAdd];
       log(`Added paths to Secondary Explorer: ${pathsToAdd.join(', ')}`);
     } catch (err) {
       log(`Failed to add paths to Secondary Explorer: ${String(err)}`);
@@ -125,25 +124,40 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
 
       if (treeViewItem.rootIndex < 0) return;
 
-      const newPaths = [...Settings.paths];
-
-      if (typeof newPaths[treeViewItem.rootIndex] === 'string') {
-        newPaths[treeViewItem.rootIndex] = {
-          hidden: true,
-          basePath: newPaths[treeViewItem.rootIndex] as string,
-        };
-      } else {
-        newPaths[treeViewItem.rootIndex] = {
-          hidden: true,
-          ...(newPaths[treeViewItem.rootIndex] as UserPaths),
-        };
-      }
-
-      Settings.paths = newPaths;
+      Settings.updatePathConfig(treeViewItem.rootIndex, { hidden: true });
       vscode.window.setStatusBarMessage('Path set to hidden from Secondary Explorer', 1500);
       log(`Path hidden in Secondary Explorer: ${treeViewItem.basePath}`);
     } catch (err) {
       log(`Failed to hide path in Secondary Explorer: ${String(err)}`);
+    }
+  };
+  const toggleViewMode = async (item?: FSItem) => {
+    try {
+      const treeViewItem = item || getSelectedItems(treeView).at(-1);
+      if (!treeViewItem) return;
+
+      if (treeViewItem.rootIndex < 0) return;
+
+      Settings.updatePathConfig(treeViewItem.rootIndex, { viewAsList: !treeViewItem.viewAsList });
+      vscode.window.setStatusBarMessage('Path set to hidden from Secondary Explorer', 1500);
+      log(`View mode changed to ${!treeViewItem.viewAsList ? 'List' : 'Tree'} for: ${treeViewItem.basePath}`);
+    } catch (err) {
+      log(`Failed to toggle view mode: ${String(err)}`);
+    }
+  };
+
+  const toggleEmptyDirectories = async (item?: FSItem) => {
+    try {
+      const treeViewItem = item || getSelectedItems(treeView).at(-1);
+      if (!treeViewItem) return;
+
+      if (treeViewItem.rootIndex < 0) return;
+
+      Settings.updatePathConfig(treeViewItem.rootIndex, { showEmptyDirectories: !treeViewItem.showEmptyDirectories });
+      vscode.window.setStatusBarMessage('Path set to hidden from Secondary Explorer', 1500);
+      log(`${!treeViewItem.showEmptyDirectories ? 'Hiding' : 'Showing'} empty directories for: ${treeViewItem.basePath}`);
+    } catch (err) {
+      log(`Failed to toggle empty directory visibility: ${String(err)}`);
     }
   };
 
@@ -299,7 +313,12 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
   const cutEntry = async (item?: FSItem) => {
     try {
       const selectedItems = getSelectedItems(treeView);
-      clipboard = { type: 'cut', items: selectedItems.length <= 1 && item ? [item] : selectedItems };
+      let items = selectedItems.length <= 1 && item ? [item] : selectedItems;
+
+      items = items.filter((i) => !i.isRoot);
+      if (!items.length) return;
+
+      clipboard = { type: 'cut', items };
       vscode.window.setStatusBarMessage(`Cut!`, 1500);
       log(`Cut items: ${clipboard.items.map((i) => i.basePath).join(', ')}`);
     } catch (err) {
@@ -358,6 +377,7 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
     try {
       const treeViewItem = item || getSelectedItems(treeView).at(-1);
       if (!treeViewItem) return;
+      if (treeViewItem.isRoot) return;
 
       const oldPath = treeViewItem.basePath;
       const parentDir = path.dirname(oldPath);
@@ -683,25 +703,34 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
     }
   };
 
-  const toggleListView = () => {
-    const viewAsList = !Settings.viewAsList;
-    Settings.viewAsList = viewAsList;
-    setContext('secondaryExplorerRootViewAsList', viewAsList);
-    provider.refresh();
-  };
+  const editTags = async (item: FSItem) => {
+    try {
+      const treeViewItem = item || getSelectedItems(treeView).at(-1);
+      if (!treeViewItem) return;
 
-  const toggleShowEmptyDirectories = () => {
-    const showEmptyDirectories = !Settings.showEmptyDirectories;
-    Settings.showEmptyDirectories = showEmptyDirectories;
-    setContext('secondaryExplorerShowEmptyDirectories', showEmptyDirectories);
-    provider.refresh();
+      if (treeViewItem.rootIndex < 0) return;
+
+      const updatedTags = await pickTags(
+        provider.tags.filter((t) => t !== NO_TAGS),
+        item.tags,
+      );
+      if (!updatedTags) return;
+
+      Settings.updatePathConfig(treeViewItem.rootIndex, { tags: updatedTags });
+
+      log(`Tas update in Secondary Explorer: ${treeViewItem.basePath}`);
+    } catch (err) {
+      log(`Failed to edit tags in Secondary Explorer: ${String(err)}`);
+    }
   };
 
   const commandCallbacks = {
-    viewAsList: () => toggleListView(),
-    viewAsTree: () => toggleListView(),
-    showEmptyDirectories: () => toggleShowEmptyDirectories(),
-    hideEmptyDirectories: () => toggleShowEmptyDirectories(),
+    viewAsList: () => (Settings.viewAsList = true),
+    viewAsTree: () => (Settings.viewAsList = false),
+    showEmptyDirectories: () => (Settings.showEmptyDirectories = true),
+    hideEmptyDirectories: () => (Settings.showEmptyDirectories = false),
+    groupByTags: () => (Settings.groupByTags = true),
+    groupByNone: () => (Settings.groupByTags = false),
     refresh: () => provider.refresh?.(),
     openSettings: () =>
       vscode.commands.executeCommand(
@@ -718,6 +747,9 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Sec
     openFolderInNewWindow,
     removePath,
     hidePath,
+    toggleEmptyDirectories,
+    toggleViewMode,
+    editTags,
     createFile,
     createFolder,
     openFile,

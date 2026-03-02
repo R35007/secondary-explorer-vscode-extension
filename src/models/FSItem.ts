@@ -5,7 +5,9 @@ import { Settings } from '../utils/Settings';
 import { normalizePath } from '../utils/utils';
 
 export type FSItemProps = {
-  basePath: string;
+  tag?: string;
+  tags?: string[];
+  basePath?: string;
   description?: string | boolean | undefined;
   tooltip?: string | vscode.MarkdownString | undefined;
   include?: string[];
@@ -20,19 +22,24 @@ export type FSItemProps = {
 
 export class FSItem extends vscode.TreeItem {
   basePath: string;
+  isRoot: boolean;
+  isTag: boolean;
   rootIndex: number;
   type: 'file' | 'folder';
-  include: string[] | undefined;
-  exclude: string[] | undefined;
-  sortOrderPattern: string[] | undefined;
-  isRoot: boolean;
-  showEmptyDirectories: boolean | undefined;
-  viewAsList: boolean | undefined;
-  parent: FSItem | undefined;
+  tag?: string;
+  tags?: string[];
+  include?: string[];
+  exclude?: string[];
+  sortOrderPattern?: string[];
+  showEmptyDirectories?: boolean;
+  viewAsList?: boolean;
+  parent?: FSItem;
 
   constructor(
     {
-      basePath,
+      tag,
+      tags,
+      basePath = '',
       name,
       description,
       tooltip,
@@ -46,6 +53,19 @@ export class FSItem extends vscode.TreeItem {
     }: FSItemProps,
     parent?: FSItem,
   ) {
+    if (tag) {
+      super(tag, vscode.TreeItemCollapsibleState.Collapsed);
+      this.basePath = '';
+      this.rootIndex = -1;
+      this.isRoot = false;
+      this.isTag = true;
+      this.type = 'folder';
+      this.contextValue = 'tag';
+      this.tag = tag;
+      this.iconPath = new vscode.ThemeIcon('tag');
+      return;
+    }
+
     const normalizedBasePath = normalizePath(basePath);
     const itemLabel = name || path.basename(normalizedBasePath);
     const isFile = fsx.statSync(normalizedBasePath).isFile();
@@ -58,10 +78,13 @@ export class FSItem extends vscode.TreeItem {
     this.tooltip = isRoot ? tooltip : normalizedBasePath;
     this.iconPath = undefined;
     // used as a viewItem in the package.json
-    this.contextValue = isRoot ? 'root' : isFile ? 'file' : 'folder';
+    this.contextValue = tag ? 'tag' : isRoot ? 'root' : isFile ? 'file' : 'folder';
 
     this.parent = parent;
     this.rootIndex = rootIndex;
+    this.isTag = false;
+    this.tag = tag;
+    this.tags = tags;
     this.isRoot = isRoot;
     this.type = isFile ? 'file' : 'folder';
 
@@ -93,12 +116,25 @@ export class FSItem extends vscode.TreeItem {
 
     if (withinParsedPathsIndex < 0) return;
 
-    const getFSItem = (fsPath: string): FSItem => {
+    const getFSItem = (fsPath: string): FSItem | undefined => {
       const rootIndex = parsedPaths.findIndex((pathObj) => pathObj.basePath === fsPath);
-      if (rootIndex >= 0) return new FSItem({ ...parsedPaths[rootIndex], isRoot: true, rootIndex });
+      if (rootIndex >= 0 && parsedPaths.length === 1) return undefined;
+      if (rootIndex >= 0) {
+        const parentItem = Settings.groupByTags ? new FSItem({ tag: parsedPaths[rootIndex].tags[0] }) : undefined;
+        return new FSItem(
+          {
+            ...parsedPaths[rootIndex],
+            isRoot: true,
+            rootIndex,
+          },
+          parentItem,
+        );
+      }
+
+      const parentItem = getFSItem(normalizePath(path.dirname(fsPath)));
       return new FSItem(
         { ...parsedPaths[withinParsedPathsIndex], basePath: fsPath, name: path.basename(fsPath), isRoot: false, rootIndex: -1 },
-        getFSItem(normalizePath(path.dirname(fsPath))),
+        parentItem,
       );
     };
 

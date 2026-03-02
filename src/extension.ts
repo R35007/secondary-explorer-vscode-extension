@@ -11,13 +11,11 @@ import { registerPathWatchers } from './utils/registerPathWatchers';
 import { Settings } from './utils/Settings';
 import { log, setContext } from './utils/utils';
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
   log('Activating Secondary Explorer extension…');
 
   // Restore context key logic for keybindings and view title icons
-  setContext('secondaryExplorerHasSelection', false);
-  setContext('secondaryExplorerRootViewAsList', Settings.viewAsList);
-  setContext('secondaryExplorerShowEmptyDirectories', Settings.showEmptyDirectories);
+  await setContext('secondaryExplorer.hasSelection', false);
 
   const provider = new SecondaryExplorerProvider();
   log('SecondaryExplorerProvider created');
@@ -56,6 +54,7 @@ export function activate(context: vscode.ExtensionContext) {
     if (
       e.affectsConfiguration('secondaryExplorer.paths') ||
       e.affectsConfiguration('secondaryExplorer.deleteBehavior') ||
+      e.affectsConfiguration('secondaryExplorer.groupByTags') ||
       e.affectsConfiguration('secondaryExplorer.viewAsList') ||
       e.affectsConfiguration('secondaryExplorer.showEmptyDirectories') ||
       e.affectsConfiguration('secondaryExplorer.rootPathSortOrder') ||
@@ -73,7 +72,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
-  context.subscriptions.push(treeView.onDidChangeSelection((e) => setContext('secondaryExplorerHasSelection', e.selection.length > 0)));
+  context.subscriptions.push(treeView.onDidChangeSelection((e) => setContext('secondaryExplorer.hasSelection', e.selection.length > 0)));
   log('Secondary Explorer extension activated successfully');
 }
 

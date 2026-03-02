@@ -2,7 +2,7 @@
   "name": "secondary-explorer",
   "displayName": "Secondary Explorer",
   "description": "Adds a secondary explorer view to manage files and folders outside the default workspace explorer.",
-  "version": "12.0.0",
+  "version": "13.0.0",
   "icon": "images/logo.png",
   "publisher": "Thinker",
   "license": "MIT",
@@ -46,36 +46,6 @@
   "contributes": {
     "commands": [
       {
-        "command": "secondary-explorer.refresh",
-        "title": "Refresh",
-        "icon": "$(refresh)"
-      },
-      {
-        "command": "secondary-explorer.openSettings",
-        "title": "Settings",
-        "icon": "$(gear)"
-      },
-      {
-        "command": "secondary-explorer.createFile",
-        "title": "New File...",
-        "icon": "$(new-file)"
-      },
-      {
-        "command": "secondary-explorer.createFolder",
-        "title": "New Folder...",
-        "icon": "$(new-folder)"
-      },
-      {
-        "command": "secondary-explorer.deleteEntry",
-        "title": "Delete",
-        "icon": "$(trash)"
-      },
-      {
-        "command": "secondary-explorer.renameEntry",
-        "title": "Rename...",
-        "icon": "$(edit)"
-      },
-      {
         "command": "secondary-explorer.openFile",
         "title": "Open File",
         "icon": "$(eye)"
@@ -84,26 +54,6 @@
         "command": "secondary-explorer.openToTheSide",
         "title": "Open to the Side",
         "icon": "$(eye)"
-      },
-      {
-        "command": "secondary-explorer.openFolderInNewWindow",
-        "title": "Open in New Window",
-        "icon": "$(link-external)"
-      },
-      {
-        "command": "secondary-explorer.cutEntry",
-        "title": "Cut",
-        "icon": "$(cut)"
-      },
-      {
-        "command": "secondary-explorer.copyEntry",
-        "title": "Copy",
-        "icon": "$(copy)"
-      },
-      {
-        "command": "secondary-explorer.pasteEntry",
-        "title": "Paste",
-        "icon": "$(paste)"
       },
       {
         "command": "secondary-explorer.revealInFileExplorer",
@@ -121,6 +71,46 @@
         "icon": "$(file-directory)"
       },
       {
+        "command": "secondary-explorer.openInTerminal",
+        "title": "Open in Integrated Terminal",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "secondary-explorer.openFolderInNewWindow",
+        "title": "Open in New Window",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "secondary-explorer.addSelectedToWorkspace",
+        "title": "Add Folder to Workspace...",
+        "icon": "$(add)"
+      },
+      {
+        "command": "secondary-explorer.createFile",
+        "title": "New File...",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "secondary-explorer.createFolder",
+        "title": "New Folder...",
+        "icon": "$(new-folder)"
+      },
+      {
+        "command": "secondary-explorer.cutEntry",
+        "title": "Cut",
+        "icon": "$(cut)"
+      },
+      {
+        "command": "secondary-explorer.copyEntry",
+        "title": "Copy",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "secondary-explorer.pasteEntry",
+        "title": "Paste",
+        "icon": "$(paste)"
+      },
+      {
         "command": "secondary-explorer.copyPath",
         "title": "Copy Path",
         "icon": "$(clippy)"
@@ -129,46 +119,6 @@
         "command": "secondary-explorer.copyRelativePath",
         "title": "Copy Relative Path",
         "icon": "$(clippy)"
-      },
-      {
-        "command": "secondary-explorer.removePath",
-        "title": "Remove From Explorer",
-        "icon": "$(trash)"
-      },
-      {
-        "command": "secondary-explorer.hidePath",
-        "title": "Hide From Explorer",
-        "icon": "$(eye-closed)"
-      },
-      {
-        "command": "secondary-explorer.openInTerminal",
-        "title": "Open in Integrated Terminal",
-        "icon": "$(terminal)"
-      },
-      {
-        "command": "secondary-explorer.addToSecondaryExplorer",
-        "title": "Add to Secondary Explorer",
-        "icon": "$(add)"
-      },
-      {
-        "command": "secondary-explorer.viewAsList",
-        "title": "View as List",
-        "icon": "$(list-tree)"
-      },
-      {
-        "command": "secondary-explorer.viewAsTree",
-        "title": "View as Tree",
-        "icon": "$(list-unordered)"
-      },
-      {
-        "command": "secondary-explorer.showEmptyDirectories",
-        "title": "Empty Directories",
-        "icon": "$(eye)"
-      },
-      {
-        "command": "secondary-explorer.hideEmptyDirectories",
-        "title": "✓ Empty Directories",
-        "icon": "$(eye-closed)"
       },
       {
         "command": "secondary-explorer.copyToWorkspaceRoot",
@@ -181,9 +131,82 @@
         "icon": "$(move)"
       },
       {
-        "command": "secondary-explorer.addSelectedToWorkspace",
-        "title": "Add Folder to Workspace...",
+        "command": "secondary-explorer.renameEntry",
+        "title": "Rename...",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "secondary-explorer.deleteEntry",
+        "title": "Delete",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "secondary-explorer.editTags",
+        "title": "Edit Tags",
+        "icon": "$(tag)"
+      },
+      {
+        "command": "secondary-explorer.toggleViewMode",
+        "title": "Toggle View Mode"
+      },
+      {
+        "command": "secondary-explorer.toggleEmptyDirectories",
+        "title": "Toggle Empty Directories"
+      },
+      {
+        "command": "secondary-explorer.hidePath",
+        "title": "Hide From Explorer",
+        "icon": "$(eye-closed)"
+      },
+      {
+        "command": "secondary-explorer.removePath",
+        "title": "Remove From Explorer",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "secondary-explorer.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "secondary-explorer.addToSecondaryExplorer",
+        "title": "Add to Secondary Explorer",
         "icon": "$(add)"
+      },
+      {
+        "command": "secondary-explorer.groupByTags",
+        "title": "Group By Tags",
+        "icon": "$(tag)"
+      },
+      {
+        "command": "secondary-explorer.groupByNone",
+        "title": "✔ Group By Tags",
+        "icon": "$(tag-remove)"
+      },
+      {
+        "command": "secondary-explorer.viewAsList",
+        "title": "View as List",
+        "icon": "$(list-tree)"
+      },
+      {
+        "command": "secondary-explorer.viewAsTree",
+        "title": "✔ View as List",
+        "icon": "$(list-unordered)"
+      },
+      {
+        "command": "secondary-explorer.showEmptyDirectories",
+        "title": "Show Empty Directories",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "secondary-explorer.hideEmptyDirectories",
+        "title": "✔ Show Empty Directories",
+        "icon": "$(eye-closed)"
+      },
+      {
+        "command": "secondary-explorer.openSettings",
+        "title": "Settings",
+        "icon": "$(gear)"
       }
     ],
     "configuration": {
@@ -210,6 +233,15 @@
               {
                 "type": "object",
                 "properties": {
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "default": [],
+                    "additionalItems": true,
+                    "markdownDescription": "ags used to group multiple paths into a single folder within the tree view. Helps organize your secondary explorer paths by categorizing."
+                  },
                   "basePath": {
                     "type": "string",
                     "default": "${workspaceFolder}",
@@ -253,6 +285,7 @@
                         "*.spec.{js,ts}"
                       ]
                     ],
+                    "additionalItems": true,
                     "markdownDescription": "Glob pattern(s) to include. Examples: *.md. Defaults to *"
                   },
                   "exclude": {
@@ -282,6 +315,7 @@
                         "out"
                       ]
                     ],
+                    "additionalItems": true,
                     "markdownDescription": "Glob pattern(s) to ignore or exclude. Defaults to node_modules, dist, build, out"
                   },
                   "name": {
@@ -387,6 +421,9 @@
                       "*.prompt.md",
                       "*.agent.md",
                       "*.chatmode.md"
+                    ],
+                    "tags": [
+                      "Others"
                     ]
                   },
                   {
@@ -405,6 +442,9 @@
                       "*.prompt.md",
                       "*.agent.md",
                       "*.chatmode.md"
+                    ],
+                    "tags": [
+                      "Documents"
                     ]
                   },
                   {
@@ -415,7 +455,10 @@
                       "**/*.{png,jpg,jpeg,gif,svg,webp,avif,bmp,tiff,ico,icns,heic,heif}"
                     ],
                     "showEmptyDirectories": true,
-                    "viewAsList": false
+                    "viewAsList": false,
+                    "tags": [
+                      "Images"
+                    ]
                   },
                   {
                     "basePath": "${workspaceFolder}",
@@ -424,6 +467,9 @@
                     "include": [
                       "*.test.{js,ts,tsx,jsx}",
                       "*.spec.{js,ts,tsx,jsx}"
+                    ],
+                    "tags": [
+                      "Tests"
                     ]
                   }
                 ],
@@ -461,6 +507,9 @@
                   "*.prompt.md",
                   "*.agent.md",
                   "*.chatmode.md"
+                ],
+                "tags": [
+                  "Others"
                 ]
               },
               {
@@ -479,6 +528,9 @@
                   "*.prompt.md",
                   "*.agent.md",
                   "*.chatmode.md"
+                ],
+                "tags": [
+                  "Documents"
                 ]
               },
               {
@@ -489,7 +541,10 @@
                   "**/*.{png,jpg,jpeg,gif,svg,webp,avif,bmp,tiff,ico,icns,heic,heif}"
                 ],
                 "showEmptyDirectories": true,
-                "viewAsList": false
+                "viewAsList": false,
+                "tags": [
+                  "Images"
+                ]
               },
               {
                 "basePath": "${workspaceFolder}",
@@ -498,6 +553,9 @@
                 "include": [
                   "*.test.{js,ts,tsx,jsx}",
                   "*.spec.{js,ts,tsx,jsx}"
+                ],
+                "tags": [
+                  "Tests"
                 ]
               }
             ]
@@ -520,20 +578,26 @@
           "default": "recycleBin",
           "description": "Controls how delete operations are handled."
         },
-        "secondaryExplorer.viewAsList": {
+        "secondaryExplorer.groupByTags": {
           "order": 3,
+          "type": "boolean",
+          "default": false,
+          "description": "Organize the root level by tags. When enabled, items are grouped into virtual folders based on their assigned tags."
+        },
+        "secondaryExplorer.viewAsList": {
+          "order": 4,
           "type": "boolean",
           "default": false,
           "description": "Set to true to show all items in the explorer as a flat list instead of a tree. By default, items are shown in a tree structure that reflects their folder hierarchy."
         },
         "secondaryExplorer.showEmptyDirectories": {
-          "order": 4,
+          "order": 5,
           "type": "boolean",
           "default": false,
           "description": "Set to true to show empty directories in the explorer. By default, empty directories are hidden to reduce clutter."
         },
         "secondaryExplorer.rootPathSortOrder": {
-          "order": 5,
+          "order": 6,
           "type": "string",
           "enum": [
             "default",
@@ -551,7 +615,7 @@
           "description": "Controls the sorting order of items in the explorer."
         },
         "secondaryExplorer.itemsSortOrderPattern": {
-          "order": 6,
+          "order": 7,
           "type": "array",
           "items": {
             "type": "string"
@@ -692,6 +756,10 @@
           "when": "false"
         },
         {
+          "command": "secondary-explorer.editTags",
+          "when": "false"
+        },
+        {
           "command": "secondary-explorer.viewAsList",
           "when": "false"
         },
@@ -740,144 +808,7 @@
           "group": "2_reveal@99"
         }
       ],
-      "view/item/context": [
-        {
-          "command": "secondary-explorer.openFolderInNewWindow",
-          "when": "view == secondaryExplorerView && viewItem == root",
-          "group": "inline"
-        },
-        {
-          "command": "secondary-explorer.hidePath",
-          "when": "view == secondaryExplorerView && viewItem == root",
-          "group": "navigation@2"
-        },
-        {
-          "command": "secondary-explorer.removePath",
-          "when": "view == secondaryExplorerView && viewItem == root",
-          "group": "navigation@3"
-        },
-        {
-          "command": "secondary-explorer.openFile",
-          "when": "view == secondaryExplorerView && viewItem == file",
-          "group": "navigation@4"
-        },
-        {
-          "command": "secondary-explorer.openToTheSide",
-          "when": "view == secondaryExplorerView && viewItem == file",
-          "group": "navigation@5"
-        },
-        {
-          "command": "secondary-explorer.revealInFileExplorer",
-          "when": "view == secondaryExplorerView",
-          "group": "navigation@6"
-        },
-        {
-          "command": "secondary-explorer.revealInExplorerView",
-          "when": "view == secondaryExplorerView",
-          "group": "navigation@7"
-        },
-        {
-          "command": "secondary-explorer.openInTerminal",
-          "when": "view == secondaryExplorerView",
-          "group": "navigation@8"
-        },
-        {
-          "command": "secondary-explorer.openFolderInNewWindow",
-          "when": "view == secondaryExplorerView",
-          "group": "navigation@9"
-        },
-        {
-          "command": "secondary-explorer.addSelectedToWorkspace",
-          "when": "view == secondaryExplorerView",
-          "group": "navigation@10"
-        },
-        {
-          "command": "secondary-explorer.createFile",
-          "when": "view == secondaryExplorerView",
-          "group": "2_creation@1"
-        },
-        {
-          "command": "secondary-explorer.createFolder",
-          "when": "view == secondaryExplorerView",
-          "group": "2_creation@2"
-        },
-        {
-          "command": "secondary-explorer.cutEntry",
-          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
-          "group": "clipboard@1"
-        },
-        {
-          "command": "secondary-explorer.copyEntry",
-          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
-          "group": "clipboard@2"
-        },
-        {
-          "command": "secondary-explorer.pasteEntry",
-          "when": "view == secondaryExplorerView",
-          "group": "clipboard@3"
-        },
-        {
-          "command": "secondary-explorer.copyPath",
-          "when": "view == secondaryExplorerView",
-          "group": "copy@1"
-        },
-        {
-          "command": "secondary-explorer.copyRelativePath",
-          "when": "view == secondaryExplorerView",
-          "group": "copy@2"
-        },
-        {
-          "command": "secondary-explorer.copyToWorkspaceRoot",
-          "when": "view == secondaryExplorerView",
-          "group": "copy@3"
-        },
-        {
-          "command": "secondary-explorer.moveToWorkspaceRoot",
-          "when": "view == secondaryExplorerView",
-          "group": "copy@4"
-        },
-        {
-          "command": "secondary-explorer.renameEntry",
-          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
-          "group": "editing@1"
-        },
-        {
-          "command": "secondary-explorer.deleteEntry",
-          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
-          "group": "editing@2"
-        }
-      ],
       "view/title": [
-        {
-          "command": "secondary-explorer.addToSecondaryExplorer",
-          "when": "view == secondaryExplorerView",
-          "group": "secondaryExplorer@1"
-        },
-        {
-          "command": "secondary-explorer.viewAsList",
-          "when": "view == secondaryExplorerView && !secondaryExplorerRootViewAsList",
-          "group": "secondaryExplorer@2"
-        },
-        {
-          "command": "secondary-explorer.viewAsTree",
-          "when": "view == secondaryExplorerView && secondaryExplorerRootViewAsList",
-          "group": "secondaryExplorer@3"
-        },
-        {
-          "command": "secondary-explorer.showEmptyDirectories",
-          "when": "view == secondaryExplorerView && !secondaryExplorerShowEmptyDirectories",
-          "group": "secondaryExplorer@4"
-        },
-        {
-          "command": "secondary-explorer.hideEmptyDirectories",
-          "when": "view == secondaryExplorerView && secondaryExplorerShowEmptyDirectories",
-          "group": "secondaryExplorer@5"
-        },
-        {
-          "command": "secondary-explorer.openSettings",
-          "when": "view == secondaryExplorerView",
-          "group": "secondaryExplorer@6"
-        },
         {
           "command": "secondary-explorer.createFile",
           "when": "view == secondaryExplorerView",
@@ -892,6 +823,168 @@
           "command": "secondary-explorer.refresh",
           "when": "view == secondaryExplorerView",
           "group": "navigation@4"
+        },
+        {
+          "command": "secondary-explorer.addToSecondaryExplorer",
+          "when": "view == secondaryExplorerView",
+          "group": "secondaryExplorer@1"
+        },
+        {
+          "command": "secondary-explorer.groupByTags",
+          "when": "view == secondaryExplorerView && !config.secondaryExplorer.groupByTags",
+          "group": "secondaryExplorer@2"
+        },
+        {
+          "command": "secondary-explorer.groupByNone",
+          "when": "view == secondaryExplorerView && config.secondaryExplorer.groupByTags",
+          "group": "secondaryExplorer@3"
+        },
+        {
+          "command": "secondary-explorer.viewAsList",
+          "when": "view == secondaryExplorerView && !config.secondaryExplorer.viewAsList",
+          "group": "secondaryExplorer@4"
+        },
+        {
+          "command": "secondary-explorer.viewAsTree",
+          "when": "view == secondaryExplorerView && config.secondaryExplorer.viewAsList",
+          "group": "secondaryExplorer@5"
+        },
+        {
+          "command": "secondary-explorer.showEmptyDirectories",
+          "when": "view == secondaryExplorerView && !config.secondaryExplorer.showEmptyDirectories",
+          "group": "secondaryExplorer@6"
+        },
+        {
+          "command": "secondary-explorer.hideEmptyDirectories",
+          "when": "view == secondaryExplorerView && config.secondaryExplorer.showEmptyDirectories",
+          "group": "secondaryExplorer@7"
+        },
+        {
+          "command": "secondary-explorer.openSettings",
+          "when": "view == secondaryExplorerView",
+          "group": "secondaryExplorer@8"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "secondary-explorer.openFile",
+          "when": "view == secondaryExplorerView && viewItem == file",
+          "group": "navigation@7"
+        },
+        {
+          "command": "secondary-explorer.openToTheSide",
+          "when": "view == secondaryExplorerView && viewItem == file",
+          "group": "navigation@8"
+        },
+        {
+          "command": "secondary-explorer.revealInFileExplorer",
+          "when": "view == secondaryExplorerView && viewItem != tag",
+          "group": "navigation@9"
+        },
+        {
+          "command": "secondary-explorer.revealInExplorerView",
+          "when": "view == secondaryExplorerView && viewItem != tag",
+          "group": "navigation@10"
+        },
+        {
+          "command": "secondary-explorer.openInTerminal",
+          "when": "view == secondaryExplorerView && viewItem != tag",
+          "group": "navigation@11"
+        },
+        {
+          "command": "secondary-explorer.openFolderInNewWindow",
+          "when": "view == secondaryExplorerView && viewItem != tag",
+          "group": "navigation@10"
+        },
+        {
+          "command": "secondary-explorer.openFolderInNewWindow",
+          "when": "view == secondaryExplorerView && viewItem == root",
+          "group": "inline"
+        },
+        {
+          "command": "secondary-explorer.addSelectedToWorkspace",
+          "when": "view == secondaryExplorerView && viewItem != tag",
+          "group": "navigation@11"
+        },
+        {
+          "command": "secondary-explorer.createFile",
+          "when": "view == secondaryExplorerView && viewItem != tag",
+          "group": "1_creation@1"
+        },
+        {
+          "command": "secondary-explorer.createFolder",
+          "when": "view == secondaryExplorerView && viewItem != tag",
+          "group": "1_creation@2"
+        },
+        {
+          "command": "secondary-explorer.cutEntry",
+          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
+          "group": "2_clipboard@1"
+        },
+        {
+          "command": "secondary-explorer.copyEntry",
+          "when": "view == secondaryExplorerView && viewItem != tag",
+          "group": "2_clipboard@2"
+        },
+        {
+          "command": "secondary-explorer.pasteEntry",
+          "when": "view == secondaryExplorerView && viewItem != tag",
+          "group": "2_clipboard@3"
+        },
+        {
+          "command": "secondary-explorer.copyPath",
+          "when": "view == secondaryExplorerView && viewItem != tag",
+          "group": "3_copy@1"
+        },
+        {
+          "command": "secondary-explorer.copyRelativePath",
+          "when": "view == secondaryExplorerView && viewItem != tag",
+          "group": "3_copy@2"
+        },
+        {
+          "command": "secondary-explorer.copyToWorkspaceRoot",
+          "when": "view == secondaryExplorerView && viewItem != tag",
+          "group": "3_copy@3"
+        },
+        {
+          "command": "secondary-explorer.moveToWorkspaceRoot",
+          "when": "view == secondaryExplorerView && viewItem != tag",
+          "group": "3_copy@4"
+        },
+        {
+          "command": "secondary-explorer.toggleViewMode",
+          "when": "view == secondaryExplorerView && viewItem == root",
+          "group": "4_editing@1"
+        },
+        {
+          "command": "secondary-explorer.toggleEmptyDirectories",
+          "when": "view == secondaryExplorerView && viewItem == root",
+          "group": "4_editing@2"
+        },
+        {
+          "command": "secondary-explorer.renameEntry",
+          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
+          "group": "5_editing@1"
+        },
+        {
+          "command": "secondary-explorer.deleteEntry",
+          "when": "view == secondaryExplorerView && (viewItem == file || viewItem == folder)",
+          "group": "5_editing@2"
+        },
+        {
+          "command": "secondary-explorer.editTags",
+          "when": "view == secondaryExplorerView && viewItem == root",
+          "group": "5_editing@3"
+        },
+        {
+          "command": "secondary-explorer.hidePath",
+          "when": "view == secondaryExplorerView && viewItem == root",
+          "group": "5_editing@6"
+        },
+        {
+          "command": "secondary-explorer.removePath",
+          "when": "view == secondaryExplorerView && viewItem == root",
+          "group": "5_editing@7"
         }
       ]
     },
@@ -899,37 +992,37 @@
       {
         "command": "secondary-explorer.createFile",
         "key": "ctrl+n",
-        "when": "focusedView == secondaryExplorerView && secondaryExplorerHasSelection"
+        "when": "focusedView == secondaryExplorerView && secondaryExplorer.hasSelection"
       },
       {
         "command": "secondary-explorer.cutEntry",
         "key": "ctrl+x",
-        "when": "focusedView == secondaryExplorerView && secondaryExplorerHasSelection"
+        "when": "focusedView == secondaryExplorerView && secondaryExplorer.hasSelection"
       },
       {
         "command": "secondary-explorer.copyEntry",
         "key": "ctrl+c",
-        "when": "focusedView == secondaryExplorerView && secondaryExplorerHasSelection"
+        "when": "focusedView == secondaryExplorerView && secondaryExplorer.hasSelection"
       },
       {
         "command": "secondary-explorer.copyPath",
         "key": "ctrl+alt+c",
-        "when": "focusedView == secondaryExplorerView && secondaryExplorerHasSelection"
+        "when": "focusedView == secondaryExplorerView && secondaryExplorer.hasSelection"
       },
       {
         "command": "secondary-explorer.pasteEntry",
         "key": "ctrl+v",
-        "when": "focusedView == secondaryExplorerView && secondaryExplorerHasSelection"
+        "when": "focusedView == secondaryExplorerView && secondaryExplorer.hasSelection"
       },
       {
         "command": "secondary-explorer.renameEntry",
         "key": "f2",
-        "when": "focusedView == secondaryExplorerView && secondaryExplorerHasSelection"
+        "when": "focusedView == secondaryExplorerView && secondaryExplorer.hasSelection"
       },
       {
         "command": "secondary-explorer.deleteEntry",
         "key": "delete",
-        "when": "focusedView == secondaryExplorerView && secondaryExplorerHasSelection"
+        "when": "focusedView == secondaryExplorerView && secondaryExplorer.hasSelection"
       }
     ]
   },

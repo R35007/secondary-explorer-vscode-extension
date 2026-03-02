@@ -35,11 +35,22 @@ export async function exists(p: string): Promise<boolean> {
 }
 
 export function normalizePath(input: string): string {
-  return decodeURIComponent(input)
-    .replace(/[\\/]+/g, getSeparators().copyPathSeparator)
-    .replace('file:' + getSeparators().copyPathSeparator, '')
-    .replace('file:' + path.sep, '')
+  const separator = getSeparators().copyPathSeparator;
+
+  let normalized = decodeURIComponent(input)
+    // 1. Unify all slashes/backslashes to your specific separator
+    .replace(/[\\/]+/g, separator)
+    // 2. Strip "file:" prefixes
+    .replace(new RegExp('file:' + separator, 'g'), '')
     .trim();
+
+  // 3. Drive Letter Logic: Match "a-z" followed by ":" at the start
+  // The regex ^([a-zA-Z]): catches the drive letter
+  normalized = normalized.replace(/^([a-zA-Z]):/, (match, drive) => {
+    return drive.toUpperCase() + ':';
+  });
+
+  return normalized;
 }
 
 export function resolveVariables(input: string, hasWorkspaceSetting?: boolean): string {
@@ -172,4 +183,61 @@ export async function getSettingSaveTarget() {
 
   if (!choice) return;
   return choice === 'Workspace' ? vscode.ConfigurationTarget.Workspace : vscode.ConfigurationTarget.Global;
+}
+
+export async function pickTags(existingTags: string[], preSelectedTags: string[] = []): Promise<string[] | undefined> {
+  const quickPick = vscode.window.createQuickPick();
+  quickPick.canSelectMany = true;
+  quickPick.ignoreFocusOut = true; // Prevents closing when clicking outside
+  quickPick.title = 'Manage Tags';
+  quickPick.placeholder = 'Select tags or type to create a new one...';
+
+  // Helper to build the list while preserving checkboxes
+  const updateItems = (filterValue: string = '') => {
+    const currentSelected = new Set(quickPick.selectedItems.map((i) => i.label));
+
+    // Create static items with their current "picked" state
+    const items: vscode.QuickPickItem[] = existingTags.map((label) => ({
+      label,
+      picked: currentSelected.has(label),
+    }));
+
+    // Add "New Tag" item if user is typing something unique
+    if (filterValue && !existingTags.includes(filterValue)) {
+      items.unshift({ label: filterValue, description: '(New Tag)', picked: true });
+    }
+
+    quickPick.items = items;
+
+    // Refill selection checkboxes based on the labels we had selected
+    quickPick.selectedItems = items.filter(
+      (i) => currentSelected.has(i.label) || (i.label === filterValue && i.description === '(New Tag)'),
+    );
+  };
+
+  // Initial load
+  const initialItems = existingTags.map((label) => ({
+    label,
+    picked: preSelectedTags.includes(label),
+  }));
+  quickPick.items = initialItems;
+  quickPick.selectedItems = initialItems.filter((i) => i.picked);
+
+  quickPick.onDidChangeValue((value) => updateItems(value));
+
+  return new Promise<string[] | undefined>((resolve) => {
+    quickPick.onDidAccept(() => {
+      resolve(quickPick.selectedItems.map((item) => item.label));
+      quickPick.hide();
+    });
+
+    quickPick.onDidHide(() => {
+      // VS Code triggers onDidHide for both Escape and Accept.
+      // If we haven't resolved yet, it's a cancellation.
+      resolve(undefined);
+      quickPick.dispose();
+    });
+
+    quickPick.show();
+  });
 }

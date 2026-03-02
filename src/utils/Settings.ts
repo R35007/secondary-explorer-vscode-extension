@@ -1,7 +1,7 @@
 import fsx from 'fs-extra';
 import path from 'path';
 import * as vscode from 'vscode';
-import { defaultExclude, defaultInclude, workspaceFolders } from './constants';
+import { defaultExclude, defaultInclude, NO_TAGS, workspaceFolders } from './constants';
 import {
   extractVariableAndValue,
   getFormattedPatternPaths,
@@ -18,6 +18,7 @@ export type UserPaths = {
   tooltip?: string | vscode.MarkdownString | undefined;
   include?: string | string[];
   exclude?: string | string[];
+  tags?: string[];
   hidden?: boolean;
   showEmptyDirectories?: boolean;
   viewAsList?: boolean;
@@ -27,15 +28,16 @@ export type UserPaths = {
 export type NormalizedPaths = {
   basePath: string;
   name: string;
+  include: string[];
+  exclude: string[];
+  tags: string[];
+  rootIndex: number;
   description?: string | boolean | undefined;
   tooltip?: string | vscode.MarkdownString | undefined;
-  include?: string[];
-  exclude?: string[];
   hidden?: boolean;
   showEmptyDirectories?: boolean;
   viewAsList?: boolean;
   sortOrderPattern?: string[];
-  rootIndex?: number;
 };
 
 export class Settings {
@@ -78,6 +80,15 @@ export class Settings {
     return (Settings.getSettings('paths') as Array<string | UserPaths>) || [];
   }
 
+  static updatePathConfig(index: number, updates: Partial<UserPaths>) {
+    const updatedPaths = [...Settings.paths];
+    const current = updatedPaths[index];
+
+    // Merge updates: if current is string, treat it as the basePath
+    updatedPaths[index] = typeof current === 'string' ? { basePath: current, ...updates } : { ...current, ...updates };
+    Settings.paths = updatedPaths;
+  }
+
   static set paths(paths: Array<string | UserPaths>) {
     Settings.setSettings('paths', paths);
   }
@@ -86,6 +97,12 @@ export class Settings {
   }
   static get showEmptyDirectories() {
     return Settings.getSettings('showEmptyDirectories') as boolean;
+  }
+  static set groupByTags(value: boolean) {
+    Settings.setSettings('groupByTags', value);
+  }
+  static get groupByTags() {
+    return Settings.getSettings('groupByTags') as boolean;
   }
   static get viewAsList() {
     return Settings.getSettings('viewAsList') as boolean;
@@ -124,6 +141,7 @@ export class Settings {
           name: folderName || path.basename(resolvedBasePath),
           include: getFormattedPatternPaths(defaultInclude),
           exclude: getFormattedPatternPaths(defaultExclude),
+          tags: [NO_TAGS],
         };
       }
       const [variable, folderName] = extractVariableAndValue(p.basePath || '${workspaceFolder}') || [];
@@ -138,6 +156,7 @@ export class Settings {
         tooltip: p.tooltip,
         include: getFormattedPatternPaths(([] as string[]).concat(p.include || defaultInclude)),
         exclude: getFormattedPatternPaths(([] as string[]).concat(p.exclude || defaultExclude)),
+        tags: p.tags && p.tags.length > 0 ? [...new Set(p.tags)] : [NO_TAGS],
       };
     });
 

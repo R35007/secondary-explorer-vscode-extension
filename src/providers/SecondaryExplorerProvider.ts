@@ -4,10 +4,12 @@ import micromatch from 'micromatch';
 import path from 'path';
 import * as vscode from 'vscode';
 import { FSItem } from '../models/FSItem';
+import { NO_TAGS } from '../utils/constants';
 import { NormalizedPaths, Settings } from '../utils/Settings';
 import { log, normalizePath, safePromise } from '../utils/utils';
 export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem> {
   public explorerPaths: NormalizedPaths[] = [];
+  public tags: string[] = [];
 
   #onDidChangeTreeData: vscode.EventEmitter<FSItem | undefined | void> = new vscode.EventEmitter<FSItem | undefined | void>();
 
@@ -25,6 +27,14 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
 
   loadPaths() {
     this.explorerPaths = Settings.parsedPaths;
+    // 1. Get unique tags and filter out the "NO_TAGS" value
+    const rawTags = [...new Set(this.explorerPaths.map((p) => p.tags).flat())];
+
+    // 2. Sort alphabetical tags and append NO_TAGS if it was present
+    this.tags = [
+      ...rawTags.filter((t) => t !== NO_TAGS).sort((a, b) => a.localeCompare(b)),
+      ...(rawTags.includes(NO_TAGS) ? [NO_TAGS] : []),
+    ];
   }
 
   refresh(element?: FSItem): void {
@@ -185,21 +195,34 @@ export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem
     return stat.isFile() ? [new FSItem({ ...pathObj, isRoot: true })] : await this.getChildrenItems(new FSItem(pathObj));
   }
 
-  async renderRootItems() {
-    if (this.explorerPaths.length === 1) return await this.renderSingleRoot();
-    // Multiple valid paths: show each as root (file or folder)
+  private async renderMultipleRoot(explorerPaths = this.explorerPaths, parent?: FSItem) {
     const items: FSItem[] = [];
-    for (const [_, pathObj] of this.explorerPaths.entries()) {
+    for (const [_, pathObj] of explorerPaths.entries()) {
       const [_, error] = await safePromise(fs.stat(pathObj.basePath));
       if (error) continue;
-      items.push(new FSItem({ ...pathObj, isRoot: true }));
+      items.push(new FSItem({ ...pathObj, isRoot: true }, parent));
     }
     return Settings.rootPathSortOrder === 'default' ? items : this.getRootSortedItems(items);
   }
 
+  async renderRootItems() {
+    if (!this.explorerPaths.length) return [];
+    if (this.explorerPaths.length === 1) return await this.renderSingleRoot();
+    if (Settings.groupByTags && this.tags.length) return this.tags.map((tag) => new FSItem({ tag }));
+    return await this.renderMultipleRoot();
+  }
+
   async getChildren(element?: FSItem): Promise<FSItem[]> {
     try {
-      return !element ? await this.renderRootItems() : await this.getChildrenItems(element);
+      if (!element) return await this.renderRootItems();
+      if (element.isTag) {
+        const parentItem = new FSItem({ tag: element.tag });
+        return await this.renderMultipleRoot(
+          this.explorerPaths.filter((p) => p.tags?.includes(element.tag!)),
+          parentItem,
+        );
+      }
+      return await this.getChildrenItems(element as FSItem);
     } catch {
       return [];
     }

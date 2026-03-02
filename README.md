@@ -15,9 +15,10 @@
 ## Features
 
 - 📁 **Secondary Explorer View**: Manage files and folders in a dedicated sidebar.
+- 🏷️ **Tagging & Grouping**: Assign custom tags to root paths and group your explorer view by categories for better organization.
 - 🗂️ **Multi-Folder Support**: Display and organize multiple local folders.
 - ➡️ **Drag and Drop**: Easily move files and folders within the secondary explorer.
-- 🔀 **Tree/List Toggle**: Switch between hierarchical tree and flat list views.
+- 🔀 **Tree/List Toggle**: Switch between hierarchical tree and flat list views at the path level.
 - 🗄️ **File & Folder Operations**: Create, view, rename, delete files/folders.
 - 🔎 **Pattern Filtering**: Filter files/folders per root using include/exclude glob patterns (e.g., show only Markdown files: `*.md`).
 - ✂️ **Cut, Copy, Paste**: Move or duplicate files/folders.
@@ -26,10 +27,11 @@
 - 🪟 **Open Folder in New Window**: Open any folder in a new VS Code window.
 - 🖉 **Improved Rename**: Renaming a folder updates open editors.
 - 🔄 **Quick Actions**: Refresh, open settings, and perform file operations.
-- 🗂️ **Copy to Workspace Root**: Copy folder from secondary explorer to workspace root folder
-- 🗂️ **Add Folder to Workspace**: Add selected folder to workspace
+- 🗂️ **Copy to Workspace Root**: Copy folder from secondary explorer to workspace root folder.
+- 🗂️ **Add Folder to Workspace**: Add selected folder to workspace.
 - 🗑️ **Remove From Explorer**: Remove a configured root folder (does not delete from disk but removes from settings).
 - 🙈 **Hide From Explorer**: Hide a configured root folder (does not remove from settings. Sets hidden to true).
+- 👻 **Hide Empty Directories**: Toggle visibility of empty folders to keep your view clean.
 - 🧭 **Quick Add**: Add selection to Secondary Explorer from the default explorer/editor context menu.
 
 ---
@@ -54,21 +56,21 @@
 
 ### File & Folder Operations
 
-- **New File/Folder**: Use the toolbar or context menu to create file or folders.
-- **Rename/Delete**: Right-click to renaming a file or folder.
-- **Cut/Copy/Paste**: Use context menu or keyboard shortcuts to move or duplicate files/folders.
-- **Drag And Drop**: Drag files/folders to move them within the secondary explorer.
-- **Reveal in File Explorer**: Right-click to reveal any file/folder in your OS file explorer.
-- **Reveal in Explorer View**: Right-click to reveal any file/folder in vscode file explorer view.
-- **Reveal in Secondary Explorer View**: Right-click to reveal any file/folder in secondary explorer view.
-- **Copy Path/Relative Path**: Right-click to copy absolute or relative path to clipboard.
-- **Open Folder in New Window**: Right-click any file or folder to open it in a new VS Code window.
-- **Open In Integrated Terminal**: Right-click any file or folder to open it in a VS Code Integrated Terminal.
-- **Open to the Side**: Right-click any file to open the file to the side.
-- **Open File**: Click or Enter to open files.
-- **Add Folder to Workspace**: Click or Enter to add the current folder to workspace.
-- **Copy to Workspace root**: Click or Enter to copy the current file or folder to workspace root folder.
-- **Move to Workspace root**: Click or Enter to move the current file or folder to workspace root folder.
+- **New File/Folder**: Create files or folders directly via the toolbar or context menu.
+- **Rename/Delete**: Rename or delete files and folders through the right-click menu.
+- **Cut/Copy/Paste**: Move or duplicate items using context menu actions or standard keyboard shortcuts.
+- **Drag and Drop**: Move files and folders effortlessly within the Secondary Explorer.
+- **Reveal in File Explorer**: Open any file or folder in your OS file explorer.
+- **Reveal in Explorer View**: Quickly locate any item within the default VS Code Explorer.
+- **Reveal in Secondary Explorer**: Locate and focus any file or folder within the Secondary Explorer view.
+- **Copy Path/Relative Path**: Copy absolute or relative paths to your clipboard with a single click.
+- **Open Folder in New Window**: Launch any folder in a fresh VS Code window.
+- **Open in Integrated Terminal**: Open the terminal at the specific path of any selected file or folder.
+- **Open to the Side**: Open files in a side-by-side editor group.
+- **Open File**: Click or press `Enter` to open files immediately.
+- **Add Folder to Workspace**: Add the selected folder to your current VS Code workspace.
+- **Copy to Workspace Root**: Copy a file or folder directly to the root of your workspace.
+- **Move to Workspace Root**: Move a file or folder directly to the root of your workspace.
 
 ### Keyboard Shortcuts
 
@@ -124,11 +126,13 @@ You can configure which folders and files appear in the **Secondary Explorer** t
       "sortOrderPattern": ["*.md", "*.txt"], // custom sorting pattern
       "include": ["*.md", "*.txt"], // include only matching file patterns
       "exclude": ["node_modules", "dist", "build", "out"], // exclude files or folders
+      "tags": ["Docs", "Tests"], // provide tags to group path items
     },
   ],
 
   "secondaryExplorer.deleteBehavior": "recycleBin", // "alwaysAsk" | "recycleBin" | "permanent"
   "secondaryExplorer.rootPathSortOrder": "default", // "default" | "filesFirst" | "foldersFirst" | "mixed"
+  "secondaryExplorer.groupByTags": false, // group paths by tags
   "secondaryExplorer.showEmptyDirectories": false, // global empty directory visibility
   "secondaryExplorer.viewAsList": false, // global list view mode
   "secondaryExplorer.itemsSortOrderPattern": ["*.instructions.md", "*.prompt.md", "*.agent.md", "*.chatmode.md", "SKILL.md"], // global sorting pattern
@@ -145,6 +149,7 @@ You can configure which folders and files appear in the **Secondary Explorer** t
       "name": "All Workspace Files",
       "include": ["**/*"],
       "exclude": ["node_modules", "dist", "build", "out", ".vscode-test"],
+      "tags": ["Others"]
     },
     {
       "basePath": "${userHome}/repo",
@@ -152,6 +157,7 @@ You can configure which folders and files appear in the **Secondary Explorer** t
       "description": "Documents"
       "tooltip": "Shows only markdown and text files"
       "include": ["**/*.{md,markdown,txt}"],
+      "tags": ["Documents", "Markdowns", "Assets"]
     },
     {
       "basePath": "${workspaceFolders[0]}",
@@ -159,14 +165,17 @@ You can configure which folders and files appear in the **Secondary Explorer** t
       "include": ["**/*.{png,jpg,jpeg,gif,svg,webp,avif,bmp,tiff,ico,icns,heic,heif}"],
       "viewAsList": true,
       "sortOrderPattern": ["*.png", "*.jpg", "*.jpeg", "*.gif", "*.svg"],
+      "tags": ["Assets", "Images"]
     },
     {
       "basePath": "${workspaceFolders[1]}",
       "name": "Workspace Tests",
       "showEmptyDirectories": false,
       "include": ["*.test.{js,ts,tsx,jsx}", "*.spec.{js,ts,tsx,jsx}"],
+      "tags": ["Tests"]
     },
   ],
+  "secondaryExplorer.groupByTags": true,
   "secondaryExplorer.viewAsList": false,
   "secondaryExplorer.showEmptyDirectories": false,
   "secondaryExplorer.deleteBehavior": "recycleBin",

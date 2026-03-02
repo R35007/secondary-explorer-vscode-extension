@@ -4,6 +4,36 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [13.0.0] - 2026-03-02
+
+🎉 **We are excited to introduce Tagging!** 🏷️ You can now organize your workspace by adding custom tags to your `secondaryExplorer.paths` configuration for better visibility and grouping. ✨
+
+Example Configuration:
+
+```json
+{
+  "secondaryExplorer.groupByTags": true,
+  "secondaryExplorer.paths": [
+    {
+      "basePath": "${workspaceFolders[1]}",
+      "name": "Workspace Docs",
+      "description": "Documents",
+      "tooltip": "Shows only markdown and text files",
+      "include": ["*.{md,markdown,txt}"],
+      "tags": ["Documents", "Markdowns"]
+    }
+  ]
+}
+```
+
+- **Added**: Tagging system for `secondaryExplorer.paths` to categorize and filter your folders.
+- **Added**: `secondaryExplorer.groupByTags` setting to group root paths by their assigned tags.
+- **Added**: `Toggle View Mode` context action to switch between Tree and List views per path.
+- **Added**: `Toggle Empty Directories` context action to show/hide empty folders per path.
+- **Added**: `Edit Tags` context action to manage path labels directly from the explorer.
+- **Updated**: Root items are now protected from move, cut, and rename operations to preserve settings integrity.
+- **Fixed**: Various issues related to context menu visibility and tree refresh synchronization.
+
 ## [12.0.0] - 2026-03-01
 
 - Added - `workspaceFolders[index]` variable to target specific workspace folders via index. Example: `workspaceFolders[0]`, `workspaceFolders[1]`
@@ -44,43 +74,43 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - Added `secondaryExplorer.paths.showEmptyDirectories` setting. Set to true to show empty directories in this group. Can be set to null to use global `#secondaryExplorer.showEmptyDirectories#` setting.
 - Added `secondaryExplorer.paths.viewAsList` setting. Set to true to show this group in list view mode. Can be set to null to use global `#secondaryExplorer.viewAsList#` setting.
 - Added `secondaryExplorer.paths.sortOrderPattern` setting. Helps to sort folder items by pattern. Can be set to null to use global `#secondaryExplorer.itemsSortOrderPattern#` setting.
-  - Example Configuration:
+- Example Configuration:
 
-    ```jsonc
-    "secondaryExplorer.paths": [
-      {
-        "basePath": "./src",
-        "name": "Source Code",
-        "include": [ "**/*.ts", "**/*.js" ],
-        "exclude": [ "**/node_modules/**", "**/dist/**" ],
-        "hidden": false,
-        "showEmptyDirectories": true,
-        "viewAsList": false,
-        "sortOrderPattern": [ "*.ts", "*.js", "*.md" ]
-      },
-      {
-        "basePath": "./docs",
-        "name": "Documentation",
-        "include": [ "**/*.md", "**/*.txt" ],
-        "exclude": [ "**/node_modules/**", "**/dist/**" ],
-        "hidden": false,
-        "showEmptyDirectories": false,
-        "viewAsList": true,
-        "sortOrderPattern": [ "*.md", "*.txt" ]
-      }
-    ],
-    "secondaryExplorer.itemsSortOrderPattern": [
-      "*.instructions.md",
-      "*.prompt.md",
-      "*.agent.md",
-      "*.chatmode.md",
-      "SKILL.md"
-    ],
-    "secondaryExplorer.rootPathSortOrder": "default",
-    "secondaryExplorer.showEmptyDirectories": false,
-    "secondaryExplorer.viewAsList": false,
-    "secondaryExplorer.deleteBehavior": "recycleBin"
-    ```
+  ```jsonc
+  "secondaryExplorer.paths": [
+    {
+      "basePath": "./src",
+      "name": "Source Code",
+      "include": [ "**/*.ts", "**/*.js" ],
+      "exclude": [ "**/node_modules/**", "**/dist/**" ],
+      "hidden": false,
+      "showEmptyDirectories": true,
+      "viewAsList": false,
+      "sortOrderPattern": [ "*.ts", "*.js", "*.md" ]
+    },
+    {
+      "basePath": "./docs",
+      "name": "Documentation",
+      "include": [ "**/*.md", "**/*.txt" ],
+      "exclude": [ "**/node_modules/**", "**/dist/**" ],
+      "hidden": false,
+      "showEmptyDirectories": false,
+      "viewAsList": true,
+      "sortOrderPattern": [ "*.md", "*.txt" ]
+    }
+  ],
+  "secondaryExplorer.itemsSortOrderPattern": [
+    "*.instructions.md",
+    "*.prompt.md",
+    "*.agent.md",
+    "*.chatmode.md",
+    "SKILL.md"
+  ],
+  "secondaryExplorer.rootPathSortOrder": "default",
+  "secondaryExplorer.showEmptyDirectories": false,
+  "secondaryExplorer.viewAsList": false,
+  "secondaryExplorer.deleteBehavior": "recycleBin"
+  ```
 
 ## [9.0.2] - 2026-02-26
 
@@ -101,12 +131,12 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## [8.0.0] - 2026-02-23
 
 - Added `secondaryExplorer.rootPathSortOrder`. Helps to sort root tree item by
-  - `Default` - sorted by `secondaryExplorer.paths` order
-  - `Files` - Files are shown before folders, all sorted alphabetically
-  - `filesFirst` - Folders are shown before files, all sorted alphabetically
-  - `mixed` - Mixed sorting order (folders and files mixed based on name, sorted alphabetically)
+- `Default` - sorted by `secondaryExplorer.paths` order
+- `Files` - Files are shown before folders, all sorted alphabetically
+- `filesFirst` - Folders are shown before files, all sorted alphabetically
+- `mixed` - Mixed sorting order (folders and files mixed based on name, sorted alphabetically)
 - Added `secondaryExplorer.itemsSortOrderPattern`. Helps to sort folder items by pattern
-  - Defaults to `[ "*.instructions.md", "*.prompt.md", "*.agent.md", "*.chatmode.md" ]`
+- Defaults to `[ "*.instructions.md", "*.prompt.md", "*.agent.md", "*.chatmode.md" ]`
 - Improved view title menus
 - Changed Secondary Explorer view icon
 
@@ -125,9 +155,9 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## [6.0.0] - 2026-02-22
 
 - Added `secondaryExplorer.deleteBehavior` command that decides how the delete works.
-  - `alwaysAsk` - Always ask before deleting (show confirmation dialog).
-  - `recycleBin` - Move to recycle bin without asking. (Default)
-  - `permanent` - Permanently delete without asking.
+- `alwaysAsk` - Always ask before deleting (show confirmation dialog).
+- `recycleBin` - Move to recycle bin without asking. (Default)
+- `permanent` - Permanently delete without asking.
 - Added `Copy to Workspace Root` in secondary explorer context that helps us to copy the selected item into workspace root folder
 - Removed `New File/Folder` from secondary explorer context
 - Added `New File...` and `New Folder...` to secondary explorer context
@@ -203,3 +233,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 - Initial release
 - Added secondary file explorer with CRUD actions (create, view, rename, delete)
+
+```
+
+```

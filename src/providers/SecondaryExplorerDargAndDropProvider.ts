@@ -19,11 +19,15 @@ export class SecondaryExplorerDragAndDrop implements vscode.TreeDragAndDropContr
    */
   async handleDrag(source: readonly FSItem[], treeDataTransfer: vscode.DataTransfer, _token: vscode.CancellationToken) {
     try {
-      treeDataTransfer.set('application/vnd.code.tree.secondaryExplorerView', new vscode.DataTransferItem(source.map((s) => s.basePath)));
+      const draggedItems = source
+        .filter((s) => !s.isTag && !s.isRoot)
+        .map((s) => s.basePath)
+        .filter(Boolean);
 
-      const uris = source.map((s) => vscode.Uri.file(s.basePath).toString()).join('\n');
-      treeDataTransfer.set('text/uri-list', new vscode.DataTransferItem(uris));
-      log(`Dragged items prepared for transfer: ${source.map((s) => s.basePath).join(', ')}`);
+      treeDataTransfer.set('application/vnd.code.tree.secondaryExplorerView', new vscode.DataTransferItem(draggedItems));
+      treeDataTransfer.set('text/uri-list', new vscode.DataTransferItem(draggedItems));
+
+      log(`Dragged items prepared for transfer: ${draggedItems.join(', ')}`);
     } catch (err) {
       log(`Failed to prepare dragged items: ${String(err)}`);
     }
@@ -35,6 +39,7 @@ export class SecondaryExplorerDragAndDrop implements vscode.TreeDragAndDropContr
    * If inaccessible, returns null and shows an error.
    */
   private async resolveTargetDir(target: FSItem): Promise<string | undefined> {
+    if (target.isTag) return;
     const stat = await fs.stat(target.basePath);
     const targetDir = stat.isDirectory() ? normalizePath(target.basePath) : normalizePath(path.dirname(target.basePath));
     log(`Resolved target directory: ${target.basePath} → ${targetDir}`);
@@ -108,13 +113,15 @@ export class SecondaryExplorerDragAndDrop implements vscode.TreeDragAndDropContr
       const treeItem = dataTransfer.get('application/vnd.code.tree.secondaryExplorerView');
       const uriItem = dataTransfer.get('text/uri-list');
 
-      if ((!treeItem && !uriItem) || !target) return;
+      if ((!treeItem?.value?.length && !uriItem?.value?.length) || !target) return;
 
-      const draggedPaths: string[] = treeItem?.value || uriItem?.value.split('\n').filter(Boolean) || [];
-      const normalizedPaths: string[] = draggedPaths.map(normalizePath);
       const targetDir = await this.resolveTargetDir(target);
+      if (!targetDir) return;
 
-      if (!targetDir || normalizedPaths.length === 0) return;
+      const draggedPaths: string[] = ([] as string[]).concat(treeItem?.value || uriItem?.value || []).flat();
+      if (!draggedPaths.length) return;
+
+      const normalizedPaths: string[] = draggedPaths.map(normalizePath);
 
       const hasFolder = normalizedPaths.some((i) => fs.statSync(i).isDirectory());
       const isSameOrSubDir = normalizedPaths.every((p) => this.isSameOrSubDir(p, targetDir));
