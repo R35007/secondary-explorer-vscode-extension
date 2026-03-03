@@ -4,6 +4,12 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [14.0.0] - 2026-03-02
+
+- Renamed `Edit Tags` to `Manage Path Tags...` in the tree view context menu.
+- Added a edit icon for the Tags says `Assign Tag to Paths...` which helps us to add or remove tags to paths.
+- Code refactored and organized.
+
 ## [13.0.0] - 2026-03-02
 
 🎉 **We are excited to introduce Tagging!** 🏷️ You can now organize your workspace by adding custom tags to your `secondaryExplorer.paths` configuration for better visibility and grouping. ✨

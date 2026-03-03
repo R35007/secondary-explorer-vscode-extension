@@ -4,12 +4,11 @@
 import * as fsx from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { registerCommands } from './commands/commands';
-import { SecondaryExplorerDragAndDrop } from './providers/SecondaryExplorerDargAndDropProvider';
-import { SecondaryExplorerProvider } from './providers/SecondaryExplorerProvider';
-import { registerPathWatchers } from './utils/registerPathWatchers';
-import { Settings } from './utils/Settings';
-import { log, setContext } from './utils/utils';
+import { registerCommands } from './commands';
+import { TreeDataProvider, TreeDragAndDropController } from './providers';
+import { registerPathWatchers } from './registerPathWatchers';
+import { Settings } from './Settings';
+import { log, setContext } from './utils';
 
 export async function activate(context: vscode.ExtensionContext) {
   log('Activating Secondary Explorer extension…');
@@ -17,20 +16,19 @@ export async function activate(context: vscode.ExtensionContext) {
   // Restore context key logic for keybindings and view title icons
   await setContext('secondaryExplorer.hasSelection', false);
 
-  const provider = new SecondaryExplorerProvider();
+  const provider = new TreeDataProvider();
   log('SecondaryExplorerProvider created');
 
   const treeView = vscode.window.createTreeView('secondaryExplorerView', {
     treeDataProvider: provider,
     showCollapseAll: true,
     canSelectMany: true,
-    dragAndDropController: new SecondaryExplorerDragAndDrop(provider),
+    dragAndDropController: new TreeDragAndDropController(provider),
   });
   context.subscriptions.push(treeView);
   log('TreeView registered');
 
-  registerCommands(context, provider, treeView);
-  log('Commands registered');
+  registerCommands(context, treeView, provider);
 
   if (Settings.parsedPaths.length) {
     registerPathWatchers(context, provider, Settings.parsedPaths);

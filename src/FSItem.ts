@@ -1,8 +1,9 @@
 import * as fsx from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { Settings } from '../utils/Settings';
-import { normalizePath } from '../utils/utils';
+import { NO_TAGS } from './constants';
+import { Settings } from './Settings';
+import { normalizePath } from './utils';
 
 export type FSItemProps = {
   tag?: string;
@@ -63,6 +64,25 @@ export class FSItem extends vscode.TreeItem {
       this.contextValue = 'tag';
       this.tag = tag;
       this.iconPath = new vscode.ThemeIcon('tag');
+
+      if (tag === NO_TAGS) {
+        this.label = '';
+        this.description = tag;
+        const tooltip = new vscode.MarkdownString();
+
+        tooltip.appendMarkdown(`#### **Unorganized Paths**\n\n`);
+        tooltip.appendMarkdown(`This group contains all paths that currently have no tags assigned.\n\n`);
+        tooltip.appendMarkdown(`---\n`);
+        tooltip.appendMarkdown(`$(info) *Tip: Use the edit button to create or assign tags to these items.*`);
+
+        // Support for icons in tooltips
+        tooltip.isTrusted = true;
+        tooltip.supportThemeIcons = true;
+
+        this.tooltip = tooltip;
+        this.iconPath = new vscode.ThemeIcon('tag-remove');
+      }
+
       return;
     }
 

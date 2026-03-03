@@ -3,11 +3,12 @@ import * as fs from 'fs-extra';
 import micromatch from 'micromatch';
 import path from 'path';
 import * as vscode from 'vscode';
-import { FSItem } from '../models/FSItem';
-import { NO_TAGS } from '../utils/constants';
-import { NormalizedPaths, Settings } from '../utils/Settings';
-import { log, normalizePath, safePromise } from '../utils/utils';
-export class SecondaryExplorerProvider implements vscode.TreeDataProvider<FSItem> {
+import { NO_TAGS } from '../constants';
+import { FSItem } from '../FSItem';
+import { NormalizedPaths, Settings } from '../Settings';
+import { log, safePromise } from '../utils';
+import { normalizePath } from '../utils';
+export class TreeDataProvider implements vscode.TreeDataProvider<FSItem> {
   public explorerPaths: NormalizedPaths[] = [];
   public tags: string[] = [];
 

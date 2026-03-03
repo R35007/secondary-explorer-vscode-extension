@@ -1,14 +1,10 @@
 import * as vscode from 'vscode';
-import { SecondaryExplorerProvider } from '../providers/SecondaryExplorerProvider';
+import { TreeDataProvider } from './providers/TreeDataProvider';
 import { log } from './utils';
 
 let activeWatchers: vscode.FileSystemWatcher[] = [];
 
-export function registerPathWatchers(
-  context: vscode.ExtensionContext,
-  provider: SecondaryExplorerProvider,
-  parsedPaths: { basePath: string }[],
-) {
+export function registerPathWatchers(context: vscode.ExtensionContext, provider: TreeDataProvider, parsedPaths: { basePath: string }[]) {
   // Dispose existing watchers before creating new ones
   activeWatchers.forEach((w) => w.dispose());
   activeWatchers = [];

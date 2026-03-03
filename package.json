@@ -2,7 +2,7 @@
   "name": "secondary-explorer",
   "displayName": "Secondary Explorer",
   "description": "Adds a secondary explorer view to manage files and folders outside the default workspace explorer.",
-  "version": "13.0.0",
+  "version": "14.0.0",
   "icon": "images/logo.png",
   "publisher": "Thinker",
   "license": "MIT",
@@ -141,8 +141,13 @@
         "icon": "$(trash)"
       },
       {
-        "command": "secondary-explorer.editTags",
-        "title": "Edit Tags",
+        "command": "secondary-explorer.assignTagToPaths",
+        "title": "Assign Tag to Paths...",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "secondary-explorer.editPathTags",
+        "title": "Manage Path Tags...",
         "icon": "$(tag)"
       },
       {
@@ -756,7 +761,11 @@
           "when": "false"
         },
         {
-          "command": "secondary-explorer.editTags",
+          "command": "secondary-explorer.editPathTags",
+          "when": "false"
+        },
+        {
+          "command": "secondary-explorer.assignTagToPaths",
           "when": "false"
         },
         {
@@ -972,7 +981,12 @@
           "group": "5_editing@2"
         },
         {
-          "command": "secondary-explorer.editTags",
+          "command": "secondary-explorer.assignTagToPaths",
+          "when": "view == secondaryExplorerView && viewItem == tag",
+          "group": "inline"
+        },
+        {
+          "command": "secondary-explorer.editPathTags",
           "when": "view == secondaryExplorerView && viewItem == root",
           "group": "5_editing@3"
         },

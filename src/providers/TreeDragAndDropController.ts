@@ -1,16 +1,17 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { FSItem } from '../models/FSItem';
-import { getUniqueDestPath, log, normalizePath } from '../utils/utils';
-import { SecondaryExplorerProvider } from './SecondaryExplorerProvider';
+import { FSItem } from '../FSItem';
+import { log } from '../utils';
+import { getUniqueDestPath, normalizePath } from '../utils';
+import { TreeDataProvider } from './TreeDataProvider';
 
-export class SecondaryExplorerDragAndDrop implements vscode.TreeDragAndDropController<FSItem> {
+export class TreeDragAndDropController implements vscode.TreeDragAndDropController<FSItem> {
   readonly id = 'secondaryExplorerDragAndDrop';
   readonly dropMimeTypes = ['application/vnd.code.tree.secondaryExplorerView', 'text/uri-list'];
   readonly dragMimeTypes = ['text/uri-list'];
 
-  constructor(private provider: SecondaryExplorerProvider) {}
+  constructor(private provider: TreeDataProvider) {}
 
   /**
    * Handles drag events by storing dragged item paths

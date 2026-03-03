@@ -2,14 +2,8 @@ import fsx from 'fs-extra';
 import path from 'path';
 import * as vscode from 'vscode';
 import { defaultExclude, defaultInclude, NO_TAGS, workspaceFolders } from './constants';
-import {
-  extractVariableAndValue,
-  getFormattedPatternPaths,
-  getInterpolateObject,
-  getSettingSaveTarget,
-  interpolate,
-  normalizePath,
-} from './utils';
+import { extractVariableAndValue, getFormattedPatternPaths, getInterpolateObject, getSettingSaveTarget, normalizePath } from './utils';
+import { interpolate } from './utils/parsing';
 
 export type UserPaths = {
   basePath?: string;
