@@ -7,12 +7,13 @@ import { Settings } from '../Settings';
 import { getSelectedItems, getSettingSaveTarget, log, pickPaths, pickTags, resolveVariables } from '../utils';
 
 export function getGeneralCommands(treeView: vscode.TreeView<FSItem>, provider: TreeDataProvider) {
-  const addToSecondaryExplorer = async (uri: vscode.Uri) => {
+  const addToSecondaryExplorer = async (arg: vscode.Uri | FSItem) => {
     try {
-      let uris = [uri];
       const userHome = process.env.HOME || process.env.USERPROFILE || '';
+      const isCallingFromNativeExplorer = arg && 'scheme' in arg && typeof arg.scheme === 'string';
 
-      if (!uri) {
+      let uris: vscode.Uri[] = [arg] as vscode.Uri[];
+      if (!isCallingFromNativeExplorer) {
         const picked = await vscode.window.showOpenDialog({
           canSelectFolders: true,
           canSelectFiles: true,

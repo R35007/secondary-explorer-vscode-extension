@@ -8,7 +8,7 @@
 
 ## Preview
 
-<img src="./images/preview.jpg" width="1000px">
+<img src="https://github-production-user-asset-6210df.s3.amazonaws.com/23217228/557488694-b388feb2-f0e0-4e3a-a7fa-20f2450483f1.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20260303%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260303T122903Z&X-Amz-Expires=300&X-Amz-Signature=df25817a59b9450905061a861b2bbed6dc0a678612049c61781e4083ce8b74c6&X-Amz-SignedHeaders=host" width="1000px">
 
 ---
 
