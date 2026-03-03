@@ -4,6 +4,10 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [14.0.2] - 2026-03-02
+
+- Fixed broken preview url in readme
+
 ## [14.0.1] - 2026-03-02
 
 - Fixed - `Add to Secondary Explorer` not showing up file browser to pick the path.
