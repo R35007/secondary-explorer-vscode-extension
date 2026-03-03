@@ -149,15 +149,15 @@ You can configure which folders and files appear in the **Secondary Explorer** t
       "name": "All Workspace Files",
       "include": ["**/*"],
       "exclude": ["node_modules", "dist", "build", "out", ".vscode-test"],
-      "tags": ["Others"]
+      "tags": ["Others"],
     },
     {
       "basePath": "${userHome}/repo",
       "name": "${workspaceFolderName} Docs",
-      "description": "Documents"
-      "tooltip": "Shows only markdown and text files"
+      "description": "Documents",
+      "tooltip": "Shows only markdown and text files",
       "include": ["**/*.{md,markdown,txt}"],
-      "tags": ["Documents", "Markdowns", "Assets"]
+      "tags": ["Documents", "Markdowns", "Assets"],
     },
     {
       "basePath": "${workspaceFolders[0]}",
@@ -165,14 +165,14 @@ You can configure which folders and files appear in the **Secondary Explorer** t
       "include": ["**/*.{png,jpg,jpeg,gif,svg,webp,avif,bmp,tiff,ico,icns,heic,heif}"],
       "viewAsList": true,
       "sortOrderPattern": ["*.png", "*.jpg", "*.jpeg", "*.gif", "*.svg"],
-      "tags": ["Assets", "Images"]
+      "tags": ["Assets", "Images"],
     },
     {
       "basePath": "${workspaceFolders[1]}",
       "name": "Workspace Tests",
       "showEmptyDirectories": false,
       "include": ["*.test.{js,ts,tsx,jsx}", "*.spec.{js,ts,tsx,jsx}"],
-      "tags": ["Tests"]
+      "tags": ["Tests"],
     },
   ],
   "secondaryExplorer.groupByTags": true,
