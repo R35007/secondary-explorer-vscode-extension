@@ -4,6 +4,11 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [15.0.0] - 2026-03-05
+
+- Added `secondaryExplorer.showUntaggedAtRoot` setting. If enabled, paths without tags will be shown at the root level instead of being grouped under 'no tags
+- Build optimized
+
 ## [14.0.2] - 2026-03-02
 
 - Fixed broken preview url in readme

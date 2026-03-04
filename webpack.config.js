@@ -3,6 +3,7 @@
 'use strict';
 
 const path = require('path');
+const { webpack } = require('webpack');
 
 //@ts-check
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
@@ -18,6 +19,7 @@ const extensionConfig = {
     path: path.resolve(__dirname, 'dist'),
     filename: 'extension.js',
     libraryTarget: 'commonjs2',
+    clean: true,
   },
   externals: {
     vscode: 'commonjs vscode', // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
@@ -43,6 +45,10 @@ const extensionConfig = {
   devtool: 'nosources-source-map',
   infrastructureLogging: {
     level: 'log', // enables logging required for problem matchers
+  },
+  optimization: {
+    // Explicitly enable minification
+    minimize: true,
   },
 };
 module.exports = [extensionConfig];

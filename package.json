@@ -2,7 +2,7 @@
   "name": "secondary-explorer",
   "displayName": "Secondary Explorer",
   "description": "Adds a secondary explorer view to manage files and folders outside the default workspace explorer.",
-  "version": "14.0.2",
+  "version": "15.0.0",
   "icon": "images/logo.png",
   "publisher": "Thinker",
   "license": "MIT",
@@ -601,8 +601,14 @@
           "default": false,
           "description": "Set to true to show empty directories in the explorer. By default, empty directories are hidden to reduce clutter."
         },
-        "secondaryExplorer.rootPathSortOrder": {
+        "secondaryExplorer.showUntaggedAtRoot": {
           "order": 6,
+          "type": "boolean",
+          "default": false,
+          "description": "If enabled, paths without tags will be shown at the root level instead of being grouped under 'no tags'."
+        },
+        "secondaryExplorer.rootPathSortOrder": {
+          "order": 7,
           "type": "string",
           "enum": [
             "default",
@@ -620,7 +626,7 @@
           "description": "Controls the sorting order of items in the explorer."
         },
         "secondaryExplorer.itemsSortOrderPattern": {
-          "order": 7,
+          "order": 8,
           "type": "array",
           "items": {
             "type": "string"

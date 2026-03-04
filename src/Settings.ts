@@ -78,9 +78,34 @@ export class Settings {
     const updatedPaths = [...Settings.paths];
     const current = updatedPaths[index];
 
-    // Merge updates: if current is string, treat it as the basePath
-    updatedPaths[index] = typeof current === 'string' ? { basePath: current, ...updates } : { ...current, ...updates };
+    if (typeof current === 'string') {
+      const [variable = current, folderName] = extractVariableAndValue(current) || [];
+      updatedPaths[index] = { basePath: variable, name: folderName, ...updates };
+    } else {
+      updatedPaths[index] = { ...current, ...updates };
+    }
+
     Settings.paths = updatedPaths;
+  }
+
+  static updateSettingsTags(selectedIndices: number[], tags: string[], updateAll: boolean = false) {
+    Settings.paths = Settings.paths.map((p, i) => {
+      const isSelected = selectedIndices.includes(i);
+      if (!isSelected && !updateAll) return p;
+
+      const isObj = typeof p !== 'string';
+      const current = (isObj ? p.tags : [])?.filter((t) => !!t && t !== NO_TAGS) || [];
+
+      const updated = isSelected ? [...new Set([...current, ...tags])] : current.filter((t) => !tags.includes(t));
+
+      // If it was a string and is unselected with no tags to change, keep it a string.
+      if (!isObj && !isSelected && updated.length === 0) return p;
+
+      if (isObj) return { ...p, tags: updated };
+
+      const [variable = p, folderName] = extractVariableAndValue(p) || [];
+      return { basePath: variable, name: folderName, tags: updated };
+    });
   }
 
   static set paths(paths: Array<string | UserPaths>) {
@@ -103,6 +128,9 @@ export class Settings {
   }
   static set viewAsList(value: boolean) {
     Settings.setSettings('viewAsList', value);
+  }
+  static get showUntaggedAtRoot() {
+    return Settings.getSettings('showUntaggedAtRoot') as boolean;
   }
   static get deleteBehavior() {
     return (Settings.getSettings('deleteBehavior') as 'alwaysAsk' | 'recycleBin' | 'permanent') || 'recycleBin';

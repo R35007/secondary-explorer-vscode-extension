@@ -6,8 +6,7 @@ import * as vscode from 'vscode';
 import { NO_TAGS } from '../constants';
 import { FSItem } from '../FSItem';
 import { NormalizedPaths, Settings } from '../Settings';
-import { log, safePromise } from '../utils';
-import { normalizePath } from '../utils';
+import { log, normalizePath, safePromise } from '../utils';
 export class TreeDataProvider implements vscode.TreeDataProvider<FSItem> {
   public explorerPaths: NormalizedPaths[] = [];
   public tags: string[] = [];
@@ -209,7 +208,12 @@ export class TreeDataProvider implements vscode.TreeDataProvider<FSItem> {
   async renderRootItems() {
     if (!this.explorerPaths.length) return [];
     if (this.explorerPaths.length === 1) return await this.renderSingleRoot();
-    if (Settings.groupByTags && this.tags.length) return this.tags.map((tag) => new FSItem({ tag }));
+    if (Settings.groupByTags && this.tags.length && Settings.showUntaggedAtRoot) {
+      const noTagItems = await this.renderMultipleRoot(this.explorerPaths.filter((p) => p.tags?.includes(NO_TAGS)));
+      const taggedItems = this.tags.filter((tag) => tag !== NO_TAGS).map((tag) => new FSItem({ tag }));
+      return [...noTagItems, ...taggedItems];
+    }
+    if (Settings.groupByTags && this.tags.length && !Settings.showUntaggedAtRoot) return this.tags.map((tag) => new FSItem({ tag }));
     return await this.renderMultipleRoot();
   }
 

@@ -140,5 +140,5 @@ export async function pickPaths(parsedPaths: any[], tags: string | string[]) {
     placeHolder: `Select paths to include these tags`,
   });
 
-  return selections ? new Set(selections.map((s) => s.rootIndex)) : null;
+  return selections ? [...new Set(selections.map((s) => s.rootIndex))] : null;
 }

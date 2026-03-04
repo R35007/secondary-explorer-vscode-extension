@@ -51,10 +51,10 @@ export async function activate(context: vscode.ExtensionContext) {
   vscode.workspace.onDidChangeConfiguration((e) => {
     if (
       e.affectsConfiguration('secondaryExplorer.paths') ||
-      e.affectsConfiguration('secondaryExplorer.deleteBehavior') ||
       e.affectsConfiguration('secondaryExplorer.groupByTags') ||
       e.affectsConfiguration('secondaryExplorer.viewAsList') ||
       e.affectsConfiguration('secondaryExplorer.showEmptyDirectories') ||
+      e.affectsConfiguration('secondaryExplorer.showUntaggedAtRoot') ||
       e.affectsConfiguration('secondaryExplorer.rootPathSortOrder') ||
       e.affectsConfiguration('secondaryExplorer.itemsSortOrderPattern')
     ) {

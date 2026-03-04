@@ -138,16 +138,22 @@ export class FSItem extends vscode.TreeItem {
 
     const getFSItem = (fsPath: string): FSItem | undefined => {
       const rootIndex = parsedPaths.findIndex((pathObj) => pathObj.basePath === fsPath);
+      // If only one path is set then do not set that path as a parent
       if (rootIndex >= 0 && parsedPaths.length === 1) return undefined;
+
       if (rootIndex >= 0) {
+        // set the tag as a parent item if Settings.groupByTags is set to true
         const parentItem = Settings.groupByTags ? new FSItem({ tag: parsedPaths[rootIndex].tags[0] }) : undefined;
+
+        // Do not set tag as a parent if the current root item has not tag and Settings.showUntaggedAtRoot is set to true
+        const shouldSetParent = Settings.showUntaggedAtRoot && parsedPaths[rootIndex].tags.includes(NO_TAGS);
         return new FSItem(
           {
             ...parsedPaths[rootIndex],
             isRoot: true,
             rootIndex,
           },
-          parentItem,
+          shouldSetParent ? undefined : parentItem,
         );
       }
 

@@ -111,17 +111,7 @@ export function getGeneralCommands(treeView: vscode.TreeView<FSItem>, provider: 
   const handleTagAssignment = async (tags: string[]) => {
     const selectedIndices = await pickPaths(Settings.parsedPaths, tags);
     if (!selectedIndices) return;
-
-    Settings.paths = Settings.paths.map((p, i) => {
-      const isSelected = selectedIndices.has(i);
-      const isObj = typeof p !== 'string';
-      const current = (isObj ? p.tags : [])?.filter((t) => !!t && t !== NO_TAGS) || [];
-
-      const updated = isSelected ? [...new Set([...current, ...tags])] : current.filter((t) => !tags?.includes(t));
-
-      if (!isObj && !isSelected) return p;
-      return isObj ? { ...p, tags: updated } : { basePath: p, tags: updated };
-    });
+    Settings.updateSettingsTags(selectedIndices, tags, true);
   };
 
   const handleNoTagsAssignment = async () => {
@@ -135,17 +125,7 @@ export function getGeneralCommands(treeView: vscode.TreeView<FSItem>, provider: 
     );
     if (!selectedIndices) return;
 
-    Settings.paths = Settings.paths.map((p, i) => {
-      const isSelected = selectedIndices.has(i);
-      if (!isSelected) return p;
-
-      const isObj = typeof p !== 'string';
-      const current = (isObj ? p.tags : [])?.filter((t) => !!t && t !== NO_TAGS) || [];
-
-      const updated = [...new Set([...current, ...tags])];
-
-      return isObj ? { ...p, tags: updated } : { basePath: p, tags: updated };
-    });
+    Settings.updateSettingsTags(selectedIndices, tags, false);
   };
 
   const assignTagToPaths = async (item: FSItem) => {
