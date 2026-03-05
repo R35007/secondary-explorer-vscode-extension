@@ -4,6 +4,10 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [15.2.1] - 2026-03-06
+
+- Fixed `normalizePath` function issue when using a regex.
+
 ## [15.2.0] - 2026-03-06
 
 - Fixed - extension break on non exist path issue fixed

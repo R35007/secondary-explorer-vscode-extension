@@ -1,25 +1,34 @@
 import * as fsx from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { log } from '.';
 
 export function normalizePath(input: string): string {
   const separator = getSeparators().copyPathSeparator;
+  // Escape the separator to handle backslashes safely in RegExp
+  const escapedSeparator = separator.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  try {
+    let normalized = decodeURIComponent(input)
+      .replace(/[\\/]+/g, separator)
+      // Use the escaped separator here
+      .replace(new RegExp('file:' + escapedSeparator, 'g'), '')
+      .trim();
 
-  let normalized = decodeURIComponent(input)
-    // 1. Unify all slashes/backslashes to your specific separator
-    .replace(/[\\/]+/g, separator)
-    // 2. Strip "file:" prefixes
-    .replace(new RegExp('file:' + separator, 'g'), '')
-    .trim();
+    normalized = normalized.replace(/^([a-zA-Z]):/, (match, drive) => {
+      return drive.toUpperCase() + ':';
+    });
 
-  // 3. Drive Letter Logic: Match "a-z" followed by ":" at the start
-  // The regex ^([a-zA-Z]): catches the drive letter
-  normalized = normalized.replace(/^([a-zA-Z]):/, (match, drive) => {
-    return drive.toUpperCase() + ':';
-  });
-
-  return normalized;
+    return normalized;
+  } catch (err) {
+    try {
+      return decodeURIComponent(input).replace(/[\\/]+/g, separator);
+    } catch (err) {
+      log(`Failed to normalizePath ${input}: ${String(err)}`);
+      return '';
+    }
+  }
 }
+
 export async function exists(p: string): Promise<boolean> {
   try {
     await fsx.access(p);
