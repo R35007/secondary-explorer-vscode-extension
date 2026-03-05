@@ -608,12 +608,13 @@
           "description": "If enabled, paths without tags will be shown at the root level instead of being grouped under 'no tags'."
         },
         "secondaryExplorer.addFoldersOnly": {
+          "order": 7,
           "type": "boolean",
           "default": false,
           "description": "When enabled, adding a file to the Secondary Explorer will add its parent folder instead."
         },
         "secondaryExplorer.rootPathSortOrder": {
-          "order": 7,
+          "order": 8,
           "type": "string",
           "enum": [
             "default",
@@ -631,7 +632,7 @@
           "description": "Controls the sorting order of items in the explorer."
         },
         "secondaryExplorer.itemsSortOrderPattern": {
-          "order": 8,
+          "order": 9,
           "type": "array",
           "items": {
             "type": "string"

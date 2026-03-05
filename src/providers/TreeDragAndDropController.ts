@@ -2,8 +2,9 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { FSItem } from '../FSItem';
-import { log } from '../utils';
-import { getUniqueDestPath, normalizePath } from '../utils';
+import { Settings } from '../Settings';
+import { NO_TAGS } from '../constants';
+import { extractVariableAndValue, getUniqueDestPath, log, normalizePath } from '../utils';
 import { TreeDataProvider } from './TreeDataProvider';
 
 export class TreeDragAndDropController implements vscode.TreeDragAndDropController<FSItem> {
@@ -20,15 +21,13 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
    */
   async handleDrag(source: readonly FSItem[], treeDataTransfer: vscode.DataTransfer, _token: vscode.CancellationToken) {
     try {
-      const draggedItems = source
-        .filter((s) => !s.isTag && !s.isRoot)
-        .map((s) => s.basePath)
-        .filter(Boolean);
-
-      treeDataTransfer.set('application/vnd.code.tree.secondaryExplorerView', new vscode.DataTransferItem(draggedItems));
-      treeDataTransfer.set('text/uri-list', new vscode.DataTransferItem(draggedItems));
-
-      log(`Dragged items prepared for transfer: ${draggedItems.join(', ')}`);
+      const draggedItems = source.filter((s) => !!s);
+      const isTagOrRoot = draggedItems.every((d) => (typeof d === 'object' && d.isRoot) || d.isTag);
+      treeDataTransfer.set(
+        'application/vnd.code.tree.secondaryExplorerView',
+        new vscode.DataTransferItem(isTagOrRoot ? draggedItems : draggedItems.map((d) => d.basePath)),
+      );
+      log(`Dragged items prepared for transfer: ${draggedItems.map((d) => d.basePath).join(', ')}`);
     } catch (err) {
       log(`Failed to prepare dragged items: ${String(err)}`);
     }
@@ -105,6 +104,86 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
   }
 
   /**
+   * Generates modal dialog content based on tag movement.
+   */
+  private getTagDropDetails(source: string, target: string, paths: string[]) {
+    const isSNo = source === NO_TAGS;
+    const isTNo = target === NO_TAGS;
+    const pathList = paths.map((p) => `- ${p}`).join('\n');
+
+    const message = isTNo ? `Remove tag "${source}"?` : isSNo ? `Assign items to "${target}"?` : `Move items to "${target}"?`;
+
+    const detail = isTNo
+      ? `The following items will have "${source}" removed and become untagged:\n\n${pathList}`
+      : isSNo
+        ? `The following untagged items will be assigned to "${target}":\n\n${pathList}`
+        : `The following items will be reassigned from "${source}" to "${target}":\n\n${pathList}`;
+
+    return { message, detail };
+  }
+
+  private async handleTagToTagDrop(draggedItem: FSItem, target: FSItem) {
+    const sourceTag = draggedItem.tag!;
+    const isNoTag = sourceTag === NO_TAGS;
+    const targetTag = target.tag!;
+
+    // Identify paths currently assigned to the source tag
+    const affectedPaths = Settings.parsedPaths.filter((p) => p.tags.includes(sourceTag)).map((p) => p.basePath);
+
+    if (affectedPaths.length === 0) return;
+
+    // Custom messages for "No Tag" vs "Existing Tag"
+    const { message, detail } = this.getTagDropDetails(sourceTag, targetTag, affectedPaths);
+
+    // Show modal confirmation dialog
+    const selection = await vscode.window.showWarningMessage(message, { modal: true, detail }, 'Proceed');
+
+    if (selection !== 'Proceed') return;
+
+    // Execute the update logic
+    const selectedIndices = Settings.parsedPaths.filter((p) => p.tags.includes(sourceTag)).map((p) => p.rootIndex);
+
+    Settings.paths = Settings.paths.map((p, i) => {
+      if (!selectedIndices.includes(i)) return p;
+
+      const isObj = typeof p !== 'string';
+      const current = (isObj ? p.tags : [])?.filter((t) => !!t && t !== NO_TAGS && t !== sourceTag) || [];
+      const updated = [...new Set([...current, targetTag])].filter((t) => t !== NO_TAGS);
+
+      if (isObj) return { ...p, tags: updated };
+
+      // Handle extraction for string-based paths
+      const [variable = p, folderName] = extractVariableAndValue(p) || [];
+      return { basePath: variable, name: folderName, tags: updated };
+    });
+  }
+
+  private handleRootToTagDrop(draggedItems: FSItem[], target: FSItem) {
+    const targetTag = target.tag!;
+    draggedItems
+      .filter((item) => item.parent?.tag || !item.tags || (item.tags?.length === 1 && item.tags[0] === NO_TAGS))
+      .forEach((item) => {
+        const sourceTag = item.parent?.tag || item.tags?.[0];
+        if (!sourceTag) return;
+
+        Settings.paths = Settings.paths.map((p, i) => {
+          const isSelected = item.rootIndex === i;
+          if (!isSelected) return p;
+
+          const isObj = typeof p !== 'string';
+          const current = (isObj ? p.tags : [])?.filter((t) => !!t && t !== NO_TAGS && t !== sourceTag) || [];
+
+          const updated = [...new Set([...current, targetTag])].filter((t) => t !== NO_TAGS);
+
+          if (isObj) return { ...p, tags: updated };
+
+          const [variable = p, folderName] = extractVariableAndValue(p) || [];
+          return { basePath: variable, name: folderName, tags: updated };
+        });
+      });
+  }
+
+  /**
    * Main drop handler. Decides whether the drop is a move
    * within the explorer or an open action in the editor.
    * Delegates actual work to helper functions for clarity.
@@ -114,13 +193,28 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
       const treeItem = dataTransfer.get('application/vnd.code.tree.secondaryExplorerView');
       const uriItem = dataTransfer.get('text/uri-list');
 
-      if ((!treeItem?.value?.length && !uriItem?.value?.length) || !target) return;
+      const draggedItems: Array<string | FSItem> = ([] as string[]).concat(treeItem?.value || uriItem?.value.split(/\r?\n/) || []).flat();
+      if (!draggedItems.length || !target) return;
+
+      const isTagToTagDrop = draggedItems.length === 1 && typeof draggedItems[0] === 'object' && draggedItems[0].isTag && target.isTag;
+      const isRootToTagDrop = draggedItems.every((p) => typeof p === 'object' && p.isRoot) && target.isTag;
+
+      if (isTagToTagDrop) return this.handleTagToTagDrop(draggedItems[0] as FSItem, target);
+      if (isRootToTagDrop) return this.handleRootToTagDrop(draggedItems as FSItem[], target);
+
+      const draggedPaths = [
+        ...new Set(
+          draggedItems
+            .filter((d) => (typeof d === 'object' && !(d.isRoot || d.isTag)) || typeof d === 'string')
+            .map((d) => (typeof d === 'object' ? d.basePath : d))
+            .filter(Boolean),
+        ),
+      ];
+
+      if (!draggedPaths.length) return;
 
       const targetDir = await this.resolveTargetDir(target);
       if (!targetDir) return;
-
-      const draggedPaths: string[] = ([] as string[]).concat(treeItem?.value || uriItem?.value || []).flat();
-      if (!draggedPaths.length) return;
 
       const normalizedPaths: string[] = draggedPaths.map(normalizePath);
 

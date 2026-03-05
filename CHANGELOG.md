@@ -4,6 +4,11 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [15.1.0] - 2026-03-05
+
+- Added `secondaryExplorer.addFoldersOnly` setting. When enabled, adding a file to the Secondary Explorer will add its parent folder instead.
+- Improved Tag to Tag drop and Root to Tag drop. Helps to re assign tags just by drag and drop
+
 ## [15.0.0] - 2026-03-05
 
 - Added `secondaryExplorer.showUntaggedAtRoot` setting. If enabled, paths without tags will be shown at the root level instead of being grouped under 'no tags
