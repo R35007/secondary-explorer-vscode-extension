@@ -4,6 +4,11 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [15.2.0] - 2026-03-06
+
+- Fixed - extension break on non exist path issue fixed
+- Added - `secondaryExplorer.useAbsolutePath` settings. When adding items to the explorer, use the full absolute path instead of workspace-relative variables.
+
 ## [15.1.0] - 2026-03-05
 
 - Added `secondaryExplorer.addFoldersOnly` setting. When enabled, adding a file to the Secondary Explorer will add its parent folder instead.

@@ -2,7 +2,7 @@
   "name": "secondary-explorer",
   "displayName": "Secondary Explorer",
   "description": "Adds a secondary explorer view to manage files and folders outside the default workspace explorer.",
-  "version": "15.1.0",
+  "version": "15.1.1",
   "icon": "images/logo.png",
   "publisher": "Thinker",
   "license": "MIT",
@@ -567,8 +567,14 @@
           ],
           "default": []
         },
-        "secondaryExplorer.deleteBehavior": {
+        "secondaryExplorer.useAbsolutePath": {
           "order": 2,
+          "type": "boolean",
+          "default": false,
+          "description": "When adding items to the explorer, use the full absolute path instead of workspace-relative variables."
+        },
+        "secondaryExplorer.deleteBehavior": {
+          "order": 3,
           "type": "string",
           "enum": [
             "alwaysAsk",
@@ -584,37 +590,37 @@
           "description": "Controls how delete operations are handled."
         },
         "secondaryExplorer.groupByTags": {
-          "order": 3,
+          "order": 4,
           "type": "boolean",
           "default": false,
           "description": "Organize the root level by tags. When enabled, items are grouped into virtual folders based on their assigned tags."
         },
         "secondaryExplorer.viewAsList": {
-          "order": 4,
+          "order": 5,
           "type": "boolean",
           "default": false,
           "description": "Set to true to show all items in the explorer as a flat list instead of a tree. By default, items are shown in a tree structure that reflects their folder hierarchy."
         },
         "secondaryExplorer.showEmptyDirectories": {
-          "order": 5,
+          "order": 6,
           "type": "boolean",
           "default": false,
           "description": "Set to true to show empty directories in the explorer. By default, empty directories are hidden to reduce clutter."
         },
         "secondaryExplorer.showUntaggedAtRoot": {
-          "order": 6,
+          "order": 7,
           "type": "boolean",
           "default": false,
           "description": "If enabled, paths without tags will be shown at the root level instead of being grouped under 'no tags'."
         },
         "secondaryExplorer.addFoldersOnly": {
-          "order": 7,
+          "order": 8,
           "type": "boolean",
           "default": false,
           "description": "When enabled, adding a file to the Secondary Explorer will add its parent folder instead."
         },
         "secondaryExplorer.rootPathSortOrder": {
-          "order": 8,
+          "order": 9,
           "type": "string",
           "enum": [
             "default",
@@ -632,7 +638,7 @@
           "description": "Controls the sorting order of items in the explorer."
         },
         "secondaryExplorer.itemsSortOrderPattern": {
-          "order": 9,
+          "order": 10,
           "type": "array",
           "items": {
             "type": "string"

@@ -39,6 +39,7 @@ export function getGeneralCommands(treeView: vscode.TreeView<FSItem>, provider: 
           resolveVariables(
             Settings.addFoldersOnly && fsx.statSync(u.fsPath).isFile() ? path.dirname(u.fsPath) : u.fsPath,
             Settings.hasWorkspacePathSetting || Settings._sessionTarget === vscode.ConfigurationTarget.Workspace,
+            Settings.useAbsolutePath,
           ),
         );
 

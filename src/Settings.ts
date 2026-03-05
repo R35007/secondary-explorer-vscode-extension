@@ -2,7 +2,7 @@ import fsx from 'fs-extra';
 import path from 'path';
 import * as vscode from 'vscode';
 import { defaultExclude, defaultInclude, NO_TAGS, workspaceFolders } from './constants';
-import { extractVariableAndValue, getFormattedPatternPaths, getInterpolateObject, getSettingSaveTarget, normalizePath } from './utils';
+import { extractVariableAndValue, getFormattedPatternPaths, getInterpolateObject, getSettingSaveTarget, log, normalizePath } from './utils';
 import { interpolate } from './utils/parsing';
 
 export type UserPaths = {
@@ -111,6 +111,9 @@ export class Settings {
   static set paths(paths: Array<string | UserPaths>) {
     Settings.setSettings('paths', paths);
   }
+  static get useAbsolutePath() {
+    return Settings.getSettings('useAbsolutePath') as boolean;
+  }
   static set showEmptyDirectories(value: boolean) {
     Settings.setSettings('showEmptyDirectories', value);
   }
@@ -150,47 +153,52 @@ export class Settings {
 
     // get Normalized paths
     const normalized: NormalizedPaths[] = paths.map((p, index) => {
-      const interpolateObject = getInterpolateObject();
+      try {
+        const interpolateObject = getInterpolateObject();
 
-      if (typeof p === 'string') {
-        const [variable, folderName] = extractVariableAndValue(p || '${workspaceFolder}') || [];
-        const interpolatedPath = interpolate(variable.replace(/\\/g, '/') || '${workspaceFolder}', interpolateObject);
+        if (typeof p === 'string') {
+          const [variable, folderName] = extractVariableAndValue(p || '${workspaceFolder}') || [];
+          const interpolatedPath = interpolate(variable.replace(/\\/g, '/') || '${workspaceFolder}', interpolateObject);
 
-        if (!interpolatedPath) return {} as NormalizedPaths;
-        if (!workspaceFolders.length && !path.isAbsolute(interpolatedPath)) return {} as NormalizedPaths;
+          if (!interpolatedPath) return {} as NormalizedPaths;
+          if (!workspaceFolders.length && !path.isAbsolute(interpolatedPath)) return {} as NormalizedPaths;
 
-        const resolvedBasePath = normalizePath(path.resolve(interpolateObject.workspaceFolder, interpolatedPath)); // resolve with workspace folder to support multiple folders
-        const basePath =
-          fsx.statSync(resolvedBasePath).isFile() && Settings.addFoldersOnly ? path.dirname(resolvedBasePath) : resolvedBasePath;
+          const resolvedBasePath = normalizePath(path.resolve(interpolateObject.workspaceFolder, interpolatedPath)); // resolve with workspace folder to support multiple folders
+          const basePath =
+            fsx.statSync(resolvedBasePath).isFile() && Settings.addFoldersOnly ? path.dirname(resolvedBasePath) : resolvedBasePath;
           return {
             rootIndex: index,
             basePath,
-          name: folderName || path.basename(basePath),
-          include: getFormattedPatternPaths(defaultInclude),
-          exclude: getFormattedPatternPaths(defaultExclude),
-          tags: [NO_TAGS],
+            name: folderName || path.basename(basePath),
+            include: getFormattedPatternPaths(defaultInclude),
+            exclude: getFormattedPatternPaths(defaultExclude),
+            tags: [NO_TAGS],
+          };
+        }
+        const [variable, folderName] = extractVariableAndValue(p.basePath || '${workspaceFolder}') || [];
+        const interpolatedPath = interpolate(variable?.replace(/\\/g, '/') || '${workspaceFolder}', interpolateObject);
+        const resolvedBasePath = normalizePath(path.resolve(interpolateObject.workspaceFolder, interpolatedPath)); // resolve with workspace folder to support multiple folders
+        const basePath =
+          fsx.statSync(resolvedBasePath).isFile() && Settings.addFoldersOnly ? path.dirname(resolvedBasePath) : resolvedBasePath;
+        return {
+          ...p,
+          rootIndex: index,
+          basePath,
+          name: interpolate(p.name || folderName || path.basename(basePath), interpolateObject),
+          description: typeof p.description === 'string' ? interpolate(p.description, interpolateObject) : undefined,
+          tooltip: p.tooltip,
+          include: getFormattedPatternPaths(([] as string[]).concat(p.include || defaultInclude)),
+          exclude: getFormattedPatternPaths(([] as string[]).concat(p.exclude || defaultExclude)),
+          tags: p.tags && p.tags.length > 0 ? [...new Set(p.tags)] : [NO_TAGS],
         };
+      } catch (err) {
+        log(`Something went wrong!: ${String(err)}`);
+        return {} as NormalizedPaths;
       }
-      const [variable, folderName] = extractVariableAndValue(p.basePath || '${workspaceFolder}') || [];
-      const interpolatedPath = interpolate(variable?.replace(/\\/g, '/') || '${workspaceFolder}', interpolateObject);
-      const resolvedBasePath = normalizePath(path.resolve(interpolateObject.workspaceFolder, interpolatedPath)); // resolve with workspace folder to support multiple folders
-      const basePath =
-        fsx.statSync(resolvedBasePath).isFile() && Settings.addFoldersOnly ? path.dirname(resolvedBasePath) : resolvedBasePath;
-      return {
-        ...p,
-        rootIndex: index,
-        basePath,
-        name: interpolate(p.name || folderName || path.basename(basePath), interpolateObject),
-        description: typeof p.description === 'string' ? interpolate(p.description, interpolateObject) : undefined,
-        tooltip: p.tooltip,
-        include: getFormattedPatternPaths(([] as string[]).concat(p.include || defaultInclude)),
-        exclude: getFormattedPatternPaths(([] as string[]).concat(p.exclude || defaultExclude)),
-        tags: p.tags && p.tags.length > 0 ? [...new Set(p.tags)] : [NO_TAGS],
-      };
     });
 
     // filter only valid and exist baseFolders
-    const filtered = normalized.filter((p) => p.basePath && path.isAbsolute(p.basePath) && fsx.existsSync(p.basePath) && !p.hidden);
+    const filtered = normalized.filter((p) => !!p && p.basePath && path.isAbsolute(p.basePath) && fsx.existsSync(p.basePath) && !p.hidden);
     return filtered;
   }
 }

@@ -39,11 +39,15 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
    * If inaccessible, returns null and shows an error.
    */
   private async resolveTargetDir(target: FSItem): Promise<string | undefined> {
-    if (target.isTag) return;
-    const stat = await fs.stat(target.basePath);
-    const targetDir = stat.isDirectory() ? normalizePath(target.basePath) : normalizePath(path.dirname(target.basePath));
-    log(`Resolved target directory: ${target.basePath} → ${targetDir}`);
-    return targetDir;
+    try {
+      if (target.isTag) return;
+      const stat = await fs.stat(target.basePath);
+      const targetDir = stat.isDirectory() ? normalizePath(target.basePath) : normalizePath(path.dirname(target.basePath));
+      log(`Resolved target directory: ${target.basePath} → ${targetDir}`);
+      return targetDir;
+    } catch (err) {
+      return;
+    }
   }
 
   private isSameOrSubDir(source: string, targetDir: string): boolean {

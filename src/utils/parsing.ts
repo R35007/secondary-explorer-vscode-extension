@@ -2,11 +2,13 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { normalizePath } from './path';
 
-export function resolveVariables(input: string, hasWorkspaceSetting?: boolean): string {
+export function resolveVariables(input: string, hasWorkspaceSetting?: boolean, useAbsolutePath?: boolean): string {
   const normInput = normalizePath(input);
   const interpolateObject = getInterpolateObject();
   const home = normalizePath(interpolateObject.userHome);
   const lowInput = normInput.toLowerCase();
+
+  if (useAbsolutePath) return normInput;
 
   if (hasWorkspaceSetting) {
     const targets = [

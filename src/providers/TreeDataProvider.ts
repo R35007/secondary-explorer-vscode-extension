@@ -228,7 +228,8 @@ export class TreeDataProvider implements vscode.TreeDataProvider<FSItem> {
         );
       }
       return await this.getChildrenItems(element as FSItem);
-    } catch {
+    } catch (err) {
+      log(`Something went wrong!: ${String(err)}`);
       return [];
     }
   }
