@@ -1,3 +1,4 @@
+import * as fsx from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { NO_TAGS } from '../constants';
@@ -35,7 +36,10 @@ export function getGeneralCommands(treeView: vscode.TreeView<FSItem>, provider: 
       const pathsToAdd = uris
         .filter(Boolean)
         .map((u) =>
-          resolveVariables(u.fsPath, Settings.hasWorkspacePathSetting || Settings._sessionTarget === vscode.ConfigurationTarget.Workspace),
+          resolveVariables(
+            Settings.addFoldersOnly && fsx.statSync(u.fsPath).isFile() ? path.dirname(u.fsPath) : u.fsPath,
+            Settings.hasWorkspacePathSetting || Settings._sessionTarget === vscode.ConfigurationTarget.Workspace,
+          ),
         );
 
       Settings.paths = [...Settings.paths, ...pathsToAdd];

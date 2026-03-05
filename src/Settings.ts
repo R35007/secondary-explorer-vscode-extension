@@ -132,6 +132,9 @@ export class Settings {
   static get showUntaggedAtRoot() {
     return Settings.getSettings('showUntaggedAtRoot') as boolean;
   }
+  static get addFoldersOnly() {
+    return Settings.getSettings('addFoldersOnly') as boolean;
+  }
   static get deleteBehavior() {
     return (Settings.getSettings('deleteBehavior') as 'alwaysAsk' | 'recycleBin' | 'permanent') || 'recycleBin';
   }
@@ -151,29 +154,33 @@ export class Settings {
 
       if (typeof p === 'string') {
         const [variable, folderName] = extractVariableAndValue(p || '${workspaceFolder}') || [];
-        const basePath = interpolate(variable.replace(/\\/g, '/') || '${workspaceFolder}', interpolateObject);
+        const interpolatedPath = interpolate(variable.replace(/\\/g, '/') || '${workspaceFolder}', interpolateObject);
 
-        if (!basePath) return {} as NormalizedPaths;
-        if (!workspaceFolders.length && !path.isAbsolute(basePath)) return {} as NormalizedPaths;
+        if (!interpolatedPath) return {} as NormalizedPaths;
+        if (!workspaceFolders.length && !path.isAbsolute(interpolatedPath)) return {} as NormalizedPaths;
 
-        const resolvedBasePath = normalizePath(path.resolve(interpolateObject.workspaceFolder, basePath)); // resolve with workspace folder to support multiple folders
-        return {
-          rootIndex: index,
-          basePath: resolvedBasePath,
-          name: folderName || path.basename(resolvedBasePath),
+        const resolvedBasePath = normalizePath(path.resolve(interpolateObject.workspaceFolder, interpolatedPath)); // resolve with workspace folder to support multiple folders
+        const basePath =
+          fsx.statSync(resolvedBasePath).isFile() && Settings.addFoldersOnly ? path.dirname(resolvedBasePath) : resolvedBasePath;
+          return {
+            rootIndex: index,
+            basePath,
+          name: folderName || path.basename(basePath),
           include: getFormattedPatternPaths(defaultInclude),
           exclude: getFormattedPatternPaths(defaultExclude),
           tags: [NO_TAGS],
         };
       }
       const [variable, folderName] = extractVariableAndValue(p.basePath || '${workspaceFolder}') || [];
-      const basePath = interpolate(variable?.replace(/\\/g, '/') || '${workspaceFolder}', interpolateObject);
-      const resolvedBasePath = normalizePath(path.resolve(interpolateObject.workspaceFolder, basePath)); // resolve with workspace folder to support multiple folders
+      const interpolatedPath = interpolate(variable?.replace(/\\/g, '/') || '${workspaceFolder}', interpolateObject);
+      const resolvedBasePath = normalizePath(path.resolve(interpolateObject.workspaceFolder, interpolatedPath)); // resolve with workspace folder to support multiple folders
+      const basePath =
+        fsx.statSync(resolvedBasePath).isFile() && Settings.addFoldersOnly ? path.dirname(resolvedBasePath) : resolvedBasePath;
       return {
         ...p,
         rootIndex: index,
-        basePath: resolvedBasePath,
-        name: interpolate(p.name || folderName || path.basename(resolvedBasePath), interpolateObject),
+        basePath,
+        name: interpolate(p.name || folderName || path.basename(basePath), interpolateObject),
         description: typeof p.description === 'string' ? interpolate(p.description, interpolateObject) : undefined,
         tooltip: p.tooltip,
         include: getFormattedPatternPaths(([] as string[]).concat(p.include || defaultInclude)),

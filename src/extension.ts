@@ -55,6 +55,7 @@ export async function activate(context: vscode.ExtensionContext) {
       e.affectsConfiguration('secondaryExplorer.viewAsList') ||
       e.affectsConfiguration('secondaryExplorer.showEmptyDirectories') ||
       e.affectsConfiguration('secondaryExplorer.showUntaggedAtRoot') ||
+      e.affectsConfiguration('secondaryExplorer.addFoldersOnly') ||
       e.affectsConfiguration('secondaryExplorer.rootPathSortOrder') ||
       e.affectsConfiguration('secondaryExplorer.itemsSortOrderPattern')
     ) {

@@ -2,7 +2,7 @@
   "name": "secondary-explorer",
   "displayName": "Secondary Explorer",
   "description": "Adds a secondary explorer view to manage files and folders outside the default workspace explorer.",
-  "version": "15.0.0",
+  "version": "15.1.0",
   "icon": "images/logo.png",
   "publisher": "Thinker",
   "license": "MIT",
@@ -606,6 +606,11 @@
           "type": "boolean",
           "default": false,
           "description": "If enabled, paths without tags will be shown at the root level instead of being grouped under 'no tags'."
+        },
+        "secondaryExplorer.addFoldersOnly": {
+          "type": "boolean",
+          "default": false,
+          "description": "When enabled, adding a file to the Secondary Explorer will add its parent folder instead."
         },
         "secondaryExplorer.rootPathSortOrder": {
           "order": 7,
