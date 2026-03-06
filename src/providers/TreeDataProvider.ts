@@ -51,10 +51,6 @@ export class TreeDataProvider implements vscode.TreeDataProvider<FSItem> {
   }
 
   getTreeItem(element: FSItem): vscode.TreeItem {
-    element.type === 'folder'
-      ? (element.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed)
-      : (element.collapsibleState = vscode.TreeItemCollapsibleState.None);
-
     return element;
   }
 

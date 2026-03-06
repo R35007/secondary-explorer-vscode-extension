@@ -4,6 +4,12 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [15.2.2] - 2026-03-06
+
+- Improved the `** no tags **` tooltip. No it shows a link to change the `secondaryExplorer.showUntaggedAtRoot` setting.
+- Prevented the root and tag element from cut, rename and delete operations.
+- Added new Icon to root folder.
+
 ## [15.2.1] - 2026-03-06
 
 - Fixed `normalizePath` function issue when using a regex.

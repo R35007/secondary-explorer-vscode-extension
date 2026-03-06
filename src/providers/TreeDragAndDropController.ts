@@ -21,8 +21,10 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
    */
   async handleDrag(source: readonly FSItem[], treeDataTransfer: vscode.DataTransfer, _token: vscode.CancellationToken) {
     try {
-      const draggedItems = source.filter((s) => !!s);
-      const isTagOrRoot = draggedItems.every((d) => (typeof d === 'object' && d.isRoot) || d.isTag);
+      const draggedItems = Settings.groupByTags
+        ? source.filter((d) => !!d)
+        : source.filter((d) => !!d && !(typeof d === 'object' && (d.isRoot || d.isTag)));
+      const isTagOrRoot = draggedItems.every((d) => typeof d === 'object' && (d.isRoot || d.isTag));
       treeDataTransfer.set(
         'application/vnd.code.tree.secondaryExplorerView',
         new vscode.DataTransferItem(isTagOrRoot ? draggedItems : draggedItems.map((d) => d.basePath)),
@@ -203,8 +205,8 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
       const isTagToTagDrop = draggedItems.length === 1 && typeof draggedItems[0] === 'object' && draggedItems[0].isTag && target.isTag;
       const isRootToTagDrop = draggedItems.every((p) => typeof p === 'object' && p.isRoot) && target.isTag;
 
-      if (isTagToTagDrop) return this.handleTagToTagDrop(draggedItems[0] as FSItem, target);
-      if (isRootToTagDrop) return this.handleRootToTagDrop(draggedItems as FSItem[], target);
+      if (Settings.groupByTags && isTagToTagDrop) return this.handleTagToTagDrop(draggedItems[0] as FSItem, target);
+      if (Settings.groupByTags && isRootToTagDrop) return this.handleRootToTagDrop(draggedItems as FSItem[], target);
 
       const draggedPaths = [
         ...new Set(

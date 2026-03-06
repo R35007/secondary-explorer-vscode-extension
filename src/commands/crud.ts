@@ -7,9 +7,7 @@ import * as vscode from 'vscode';
 import { isWindows, windowsInvalidName } from '../constants';
 import { TreeDataProvider } from '../providers/TreeDataProvider';
 import { Settings } from '../Settings';
-import { log } from '../utils';
-import { getSelectedItems } from '../utils';
-import { exists, getSeparators, getUniqueDestPath, normalizePath } from '../utils';
+import { exists, getSelectedItems, getSeparators, getUniqueDestPath, log, normalizePath } from '../utils';
 
 const trash = require('trash').default;
 
@@ -232,7 +230,7 @@ function getCutCopyPasteCommands(treeView: vscode.TreeView<FSItem>, provider: Tr
       const selectedItems = getSelectedItems(treeView);
       let items = selectedItems.length <= 1 && item ? [item] : selectedItems;
 
-      items = items.filter((i) => !i.isRoot);
+      items = items.filter((i) => !i.isRoot && !i.isTag);
       if (!items.length) return;
 
       clipboard = { type: 'cut', items };
@@ -434,8 +432,7 @@ function getEditCommands(treeView: vscode.TreeView<FSItem>) {
   const renameEntry = async (item?: FSItem) => {
     try {
       const treeViewItem = item || getSelectedItems(treeView).at(-1);
-      if (!treeViewItem) return;
-      if (treeViewItem.isRoot) return;
+      if (!treeViewItem || treeViewItem.isRoot || treeViewItem.isTag) return;
 
       const oldPath = treeViewItem.basePath;
       const parentDir = path.dirname(oldPath);
@@ -499,7 +496,9 @@ function getEditCommands(treeView: vscode.TreeView<FSItem>) {
   const deleteEntry = async (item?: FSItem) => {
     try {
       const selectedItems = getSelectedItems(treeView);
-      const itemsToDelete = selectedItems.length <= 1 && item ? [item] : selectedItems;
+      let itemsToDelete = selectedItems.length <= 1 && item ? [item] : selectedItems;
+
+      itemsToDelete = itemsToDelete.filter((i) => !i.isRoot && !i.isTag);
       if (itemsToDelete.length === 0) return;
 
       const names = itemsToDelete.map((s) => (typeof s.label === 'string' ? s.label : (s.label?.label ?? s.basePath)));

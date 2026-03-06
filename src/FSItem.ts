@@ -70,14 +70,26 @@ export class FSItem extends vscode.TreeItem {
         this.description = tag;
         const tooltip = new vscode.MarkdownString();
 
-        tooltip.appendMarkdown(`#### **Unorganized Paths**\n\n`);
-        tooltip.appendMarkdown(`This group contains all paths that currently have no tags assigned.\n\n`);
-        tooltip.appendMarkdown(`---\n`);
-        tooltip.appendMarkdown(`$(info) *Tip: Use the edit button to create or assign tags to these items.*`);
-
-        // Support for icons in tooltips
+        // 1. Enable command links and icons
         tooltip.isTrusted = true;
         tooltip.supportThemeIcons = true;
+
+        tooltip.appendMarkdown(`#### **Unorganized Paths**\n\n`);
+        tooltip.appendMarkdown(`This group contains all paths that currently have no tags assigned.\n\n`);
+
+        const showWorkspaceSetting = Settings.hasWorkspacePathSetting || Settings._sessionTarget === vscode.ConfigurationTarget.Workspace;
+
+        // 2. Add the link to settings
+        // The syntax is [Label](command:commandId?args)
+        const settingsArg = encodeURIComponent(JSON.stringify('secondaryExplorer.showUntaggedAtRoot'));
+        tooltip.appendMarkdown(
+          showWorkspaceSetting
+            ? `$(settings-gear) [Show at root level instead of grouping](command:workbench.action.openWorkspaceSettings?${settingsArg})\n\n`
+            : `$(settings-gear) [Show at root level instead of grouping](command:workbench.action.openSettings?${settingsArg})\n\n`,
+        );
+
+        tooltip.appendMarkdown(`---\n`);
+        tooltip.appendMarkdown(`$(info) *Tip: Use the edit button to create or assign tags to these items.*`);
 
         this.tooltip = tooltip;
         this.iconPath = new vscode.ThemeIcon('tag-remove');
@@ -95,8 +107,8 @@ export class FSItem extends vscode.TreeItem {
 
     this.resourceUri = vscode.Uri.file(normalizedBasePath);
     this.description = isRoot ? description : undefined;
-    this.tooltip = isRoot ? tooltip : normalizedBasePath;
-    this.iconPath = undefined;
+    this.tooltip = isRoot ? tooltip || `Root: ${itemLabel}` : normalizedBasePath;
+    this.iconPath = isRoot && !isFile ? new vscode.ThemeIcon('root-folder') : undefined;
     // used as a viewItem in the package.json
     this.contextValue = tag ? 'tag' : isRoot ? 'root' : isFile ? 'file' : 'folder';
 
