@@ -29,6 +29,9 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
         'application/vnd.code.tree.secondaryExplorerView',
         new vscode.DataTransferItem(isTagOrRoot ? draggedItems : draggedItems.map((d) => d.basePath)),
       );
+      // This is to track the files dragged from outside the secondary explorer, so we can handle them in the drop handler. The explorer itself will use the tree-specific format above.
+      const uris = source.map((s) => vscode.Uri.file(s.basePath).toString()).join('\r\n');
+      treeDataTransfer.set('text/uri-list', new vscode.DataTransferItem(uris));
       log(`Dragged items prepared for transfer: ${draggedItems.map((d) => d.basePath).join(', ')}`);
     } catch (err) {
       log(`Failed to prepare dragged items: ${String(err)}`);
@@ -130,7 +133,6 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 
   private async handleTagToTagDrop(draggedItem: FSItem, target: FSItem) {
     const sourceTag = draggedItem.tag!;
-    const isNoTag = sourceTag === NO_TAGS;
     const targetTag = target.tag!;
 
     // Identify paths currently assigned to the source tag
@@ -199,6 +201,8 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
       const treeItem = dataTransfer.get('application/vnd.code.tree.secondaryExplorerView');
       const uriItem = dataTransfer.get('text/uri-list');
 
+      if (!treeItem && !uriItem) return;
+
       const draggedItems: Array<string | FSItem> = ([] as string[]).concat(treeItem?.value || uriItem?.value.split(/\r?\n/) || []).flat();
       if (!draggedItems.length || !target) return;
 
@@ -215,21 +219,18 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
             .map((d) => (typeof d === 'object' ? d.basePath : d))
             .filter(Boolean),
         ),
-      ];
-
+      ].map(normalizePath);
       if (!draggedPaths.length) return;
 
       const targetDir = await this.resolveTargetDir(target);
       if (!targetDir) return;
 
-      const normalizedPaths: string[] = draggedPaths.map(normalizePath);
-
-      const hasFolder = normalizedPaths.some((i) => fs.statSync(i).isDirectory());
-      const isSameOrSubDir = normalizedPaths.every((p) => this.isSameOrSubDir(p, targetDir));
+      const hasFolder = draggedPaths.some((i) => fs.statSync(i).isDirectory());
+      const isSameOrSubDir = draggedPaths.every((p) => this.isSameOrSubDir(p, targetDir));
       if (isSameOrSubDir) return;
 
-      const showProgress = normalizedPaths.length > 1 || hasFolder;
-      await this.runMove(normalizedPaths, targetDir, showProgress);
+      const showProgress = draggedPaths.length > 1 || hasFolder;
+      await this.runMove(draggedPaths, targetDir, showProgress);
       log(`All items moved successfully into: ${targetDir}`);
     } catch (err) {
       log(`Failed to complete move operation: ${String(err)}`);

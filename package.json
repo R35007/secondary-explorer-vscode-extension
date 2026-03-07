@@ -2,7 +2,7 @@
   "name": "secondary-explorer",
   "displayName": "Secondary Explorer",
   "description": "Adds a secondary explorer view to manage files and folders outside the default workspace explorer.",
-  "version": "15.2.2",
+  "version": "15.2.3",
   "icon": "images/logo.png",
   "publisher": "Thinker",
   "license": "MIT",

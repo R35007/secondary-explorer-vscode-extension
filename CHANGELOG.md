@@ -4,6 +4,10 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [15.2.3] - 2026-03-06
+
+- Fixed: Open file on drag and drop no working issue fixed.
+
 ## [15.2.2] - 2026-03-06
 
 - Improved the `** no tags **` tooltip. No it shows a link to change the `secondaryExplorer.showUntaggedAtRoot` setting.

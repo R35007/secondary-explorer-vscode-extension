@@ -70,10 +70,6 @@ export class Settings {
     return Settings.configuration.update(key, val, Settings._sessionTarget);
   }
 
-  static get paths() {
-    return (Settings.getSettings('paths') as Array<string | UserPaths>) || [];
-  }
-
   static updatePathConfig(index: number, updates: Partial<UserPaths>) {
     const updatedPaths = [...Settings.paths];
     const current = updatedPaths[index];
@@ -106,6 +102,10 @@ export class Settings {
       const [variable = p, folderName] = extractVariableAndValue(p) || [];
       return { basePath: variable, name: folderName, tags: updated };
     });
+  }
+
+  static get paths() {
+    return (Settings.getSettings('paths') as Array<string | UserPaths>) || [];
   }
 
   static set paths(paths: Array<string | UserPaths>) {
@@ -149,7 +149,7 @@ export class Settings {
   }
 
   static get parsedPaths() {
-    const paths = Settings.paths;
+    const paths = [...Settings.paths];
 
     // get Normalized paths
     const normalized: NormalizedPaths[] = paths.map((p, index) => {
