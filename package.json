@@ -400,6 +400,19 @@
                       null
                     ],
                     "description": "Set to true to show items in this group as a flat list instead of a tree. Can be set to null to use global `#secondaryExplorer.viewAsList#` setting."
+                  },
+                  "icon": {
+                    "type": "string",
+                    "default": "",
+                    "examples": [
+                      "folder",
+                      "root-folder",
+                      "star",
+                      "book",
+                      "file-directory",
+                      "C:/path/to/icon.svg"
+                    ],
+                    "description": "Icon for this root folder. Use a ThemeIcon ID (e.g. 'star', 'folder', 'book') or an absolute path to a custom SVG/PNG file. Supports variable interpolation."
                   }
                 },
                 "examples": [
@@ -761,6 +774,10 @@
           "when": "false"
         },
         {
+          "command": "secondary-explorer.undoEntry",
+          "when": "false"
+        },
+        {
           "command": "secondary-explorer.revealInFileExplorer",
           "when": "false"
         },
@@ -942,6 +959,11 @@
           "command": "secondary-explorer.addSelectedToWorkspace",
           "when": "view == secondaryExplorerView && viewItem != tag",
           "group": "navigation@11"
+        },
+        {
+          "command": "secondary-explorer.addToSecondaryExplorer",
+          "when": "view == secondaryExplorerView && viewItem == file || viewItem == folder",
+          "group": "navigation@99"
         },
         {
           "command": "secondary-explorer.createFile",

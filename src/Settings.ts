@@ -17,6 +17,7 @@ export type UserPaths = {
   showEmptyDirectories?: boolean;
   viewAsList?: boolean;
   sortOrderPattern?: string[];
+  icon?: string;
 };
 
 export type NormalizedPaths = {
@@ -32,6 +33,7 @@ export type NormalizedPaths = {
   showEmptyDirectories?: boolean;
   viewAsList?: boolean;
   sortOrderPattern?: string[];
+  icon?: string;
 };
 
 export class Settings {
@@ -199,6 +201,7 @@ export class Settings {
           name: interpolate(p.name || folderName || path.basename(basePath), interpolateObject),
           description: typeof p.description === 'string' ? interpolate(p.description, interpolateObject) : undefined,
           tooltip: p.tooltip,
+          icon: p.icon ? interpolate(p.icon, interpolateObject) : undefined,
           include: getFormattedPatternPaths(([] as string[]).concat(p.include || defaultInclude)),
           exclude: getFormattedPatternPaths(([] as string[]).concat(p.exclude || defaultExclude)),
           tags: p.tags && p.tags.length > 0 ? [...new Set(p.tags)] : [NO_TAGS],

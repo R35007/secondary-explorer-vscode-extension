@@ -19,6 +19,7 @@ export type FSItemProps = {
   viewAsList?: boolean;
   rootIndex?: number;
   sortOrderPattern?: string[];
+  icon?: string;
 };
 
 export class FSItem extends vscode.TreeItem {
@@ -52,6 +53,7 @@ export class FSItem extends vscode.TreeItem {
       include,
       exclude,
       sortOrderPattern,
+      icon,
     }: FSItemProps,
     parent?: FSItem,
   ) {
@@ -109,7 +111,13 @@ export class FSItem extends vscode.TreeItem {
     this.resourceUri = vscode.Uri.file(normalizedBasePath);
     this.description = isRoot ? description : undefined;
     this.tooltip = isRoot ? tooltip || `Root: ${itemLabel}` : normalizedBasePath;
-    this.iconPath = isRoot && !isFile ? new vscode.ThemeIcon('root-folder') : undefined;
+    if (isRoot && !isFile) {
+      if (icon && path.isAbsolute(icon)) {
+        this.iconPath = vscode.Uri.file(icon);
+      } else {
+        this.iconPath = new vscode.ThemeIcon(icon || 'root-folder');
+      }
+    }
     // used as a viewItem in the package.json
     this.contextValue = tag ? 'tag' : isRoot ? 'root' : isFile ? 'file' : 'folder';
 
