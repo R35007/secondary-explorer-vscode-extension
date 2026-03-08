@@ -4,6 +4,13 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [16.0.0] - 2026-03-08
+
+- Added: **Undo** command (`Ctrl+Z`) to revert the last file operation (cut+paste move, copy+paste, rename, or drag-and-drop move). Only the most recent action is tracked — one level of undo.
+- Added: Explorer welcome view now shows a distinct message when paths are configured but all are inaccessible or do not exist on disk, with **Open Settings** and **Add Folder to Explorer** buttons.
+- Added: Respects native VS Code explorer settings — `explorer.fileNesting.enabled`, `explorer.fileNesting.patterns`, and `explorer.confirmDelete` are now honoured by the Secondary Explorer.
+- Improved: More detailed logs in the `SecondaryExplorer` output channel for easier debugging.
+
 ## [15.2.3] - 2026-03-06
 
 - Fixed: Open file on drag and drop no working issue fixed.

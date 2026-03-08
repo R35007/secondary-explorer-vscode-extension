@@ -1,9 +1,10 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { UndoAction } from '../commands/crud';
+import { NO_TAGS } from '../constants';
 import { FSItem } from '../FSItem';
 import { Settings } from '../Settings';
-import { NO_TAGS } from '../constants';
 import { extractVariableAndValue, getUniqueDestPath, log, normalizePath } from '../utils';
 import { TreeDataProvider } from './TreeDataProvider';
 
@@ -12,7 +13,10 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
   readonly dropMimeTypes = ['application/vnd.code.tree.secondaryExplorerView', 'text/uri-list'];
   readonly dragMimeTypes = ['text/uri-list'];
 
-  constructor(private provider: TreeDataProvider) {}
+  constructor(
+    private provider: TreeDataProvider,
+    private undoState: { action: UndoAction | null },
+  ) {}
 
   /**
    * Handles drag events by storing dragged item paths
@@ -25,6 +29,13 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
         ? source.filter((d) => !!d)
         : source.filter((d) => !!d && !(typeof d === 'object' && (d.isRoot || d.isTag)));
       const isTagOrRoot = draggedItems.every((d) => typeof d === 'object' && (d.isRoot || d.isTag));
+
+      if (!Settings.groupByTags && isTagOrRoot && !draggedItems.length) {
+        log('Drag-and-drop of root items or tags is not supported. Only files and folders can be moved.');
+        vscode.window.showWarningMessage('Only files and folders can be moved. Drag-and-drop of root items or tags is not supported.');
+        return;
+      }
+
       treeDataTransfer.set(
         'application/vnd.code.tree.secondaryExplorerView',
         new vscode.DataTransferItem(isTagOrRoot ? draggedItems : draggedItems.map((d) => d.basePath)),
@@ -68,21 +79,27 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
    * Skips no-op cases: same directory, moving into own folder/subdir,
    * or if the destination already exists. Reports progress.
    */
-  private async moveItem(filePath: string, targetDir: string, progress?: vscode.Progress<unknown>, cancelToken?: vscode.CancellationToken) {
+  private async moveItem(
+    filePath: string,
+    targetDir: string,
+    progress?: vscode.Progress<unknown>,
+    cancelToken?: vscode.CancellationToken,
+  ): Promise<{ from: string; to: string } | null> {
     if (cancelToken?.isCancellationRequested) {
       log(`Move operation cancelled by user`);
       vscode.window.showInformationMessage('Move operation cancelled.');
-      return;
+      return null;
     }
 
     const fileName = path.basename(filePath);
     const newPath = await getUniqueDestPath(targetDir, fileName);
 
     // Prevent moving a directory into itself or its subdirectories
-    if (this.isSameOrSubDir(filePath, targetDir)) return;
+    if (this.isSameOrSubDir(filePath, targetDir)) return null;
 
     await fs.move(filePath, newPath, { overwrite: false });
     progress?.report({ message: `Moved: ${fileName}` });
+    return { from: filePath, to: newPath };
   }
 
   /**
@@ -90,13 +107,16 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
    * Shows progress if multiple items or folders are involved.
    * Reports incremental progress as items are moved.
    */
-  private async runMove(draggedPaths: string[], targetDir: string, showProgress: boolean) {
+  private async runMove(draggedPaths: string[], targetDir: string, showProgress: boolean): Promise<Array<{ from: string; to: string }>> {
+    const movedItems: Array<{ from: string; to: string }> = [];
+
     const runner = async (progress?: vscode.Progress<unknown>, cancelToken?: vscode.CancellationToken) => {
       const total = draggedPaths.length;
       let count = 0;
 
       for (const filePath of draggedPaths) {
-        await this.moveItem(filePath, targetDir, progress, cancelToken);
+        const result = await this.moveItem(filePath, targetDir, progress, cancelToken);
+        if (result) movedItems.push(result);
         count++;
         progress?.report({ increment: (count / total) * 100, message: `${count}/${total} moved` });
       }
@@ -110,6 +130,8 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
     } else {
       await runner();
     }
+
+    return movedItems;
   }
 
   /**
@@ -212,6 +234,7 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
       if (Settings.groupByTags && isTagToTagDrop) return this.handleTagToTagDrop(draggedItems[0] as FSItem, target);
       if (Settings.groupByTags && isRootToTagDrop) return this.handleRootToTagDrop(draggedItems as FSItem[], target);
 
+      const hasRootOrTagDelete = draggedItems.some((d) => typeof d === 'object' && (d.isRoot || d.isTag));
       const draggedPaths = [
         ...new Set(
           draggedItems
@@ -220,17 +243,37 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
             .filter(Boolean),
         ),
       ].map(normalizePath);
-      if (!draggedPaths.length) return;
+
+      if (!draggedPaths.length) {
+        if (hasRootOrTagDelete) {
+          log('Drag-and-drop of root items or tags is not supported. Only files and folders can be moved.');
+          vscode.window.showWarningMessage('Only files and folders can be moved. Drag-and-drop of root items or tags is not supported.');
+          return;
+        }
+        log('No valid file paths to move');
+        return;
+      }
 
       const targetDir = await this.resolveTargetDir(target);
-      if (!targetDir) return;
+      if (!targetDir) {
+        log(`Invalid drop target: ${target.basePath}`);
+        vscode.window.showErrorMessage('Cannot move items: Invalid drop target.');
+        return;
+      }
 
       const hasFolder = draggedPaths.some((i) => fs.statSync(i).isDirectory());
       const isSameOrSubDir = draggedPaths.every((p) => this.isSameOrSubDir(p, targetDir));
-      if (isSameOrSubDir) return;
+      if (isSameOrSubDir) {
+        log('Move operation cancelled: Cannot move a directory into itself or its subdirectories.');
+        vscode.window.showErrorMessage('Cannot move a directory into itself or its subdirectories.');
+        return;
+      }
 
       const showProgress = draggedPaths.length > 1 || hasFolder;
-      await this.runMove(draggedPaths, targetDir, showProgress);
+      const movedItems = await this.runMove(draggedPaths, targetDir, showProgress);
+      if (movedItems.length > 0) {
+        this.undoState.action = { type: 'move', items: movedItems };
+      }
       log(`All items moved successfully into: ${targetDir}`);
     } catch (err) {
       log(`Failed to complete move operation: ${String(err)}`);

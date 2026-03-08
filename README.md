@@ -1,6 +1,6 @@
 ## <img src="images/logo.png" alt="Secondary Explorer Logo" width="32" /> Secondary Explorer
 
-> Adds a secondary explorer view to manage files and folders, create, view, rename, delete, cut, copy, paste, and more—outside the default workspace explorer.
+> Adds a secondary explorer view to manage files and folders, create, view, rename, delete, cut, copy, paste, undo, and more—outside the default workspace explorer.
 
 ---
 
@@ -22,8 +22,11 @@
 - 🗄️ **File & Folder Operations**: Create, view, rename, delete files/folders.
 - 🔎 **Pattern Filtering**: Filter files/folders per root using include/exclude glob patterns (e.g., show only Markdown files: `*.md`).
 - ✂️ **Cut, Copy, Paste**: Move or duplicate files/folders.
+- ↩️ **Undo**: Undo the last cut+paste, copy+paste, rename, or drag-and-drop move with `Ctrl+Z`.
+- 🗂️ **File Nesting**: Respects VS Code's native `explorer.fileNesting.enabled` and `explorer.fileNesting.patterns` settings to nest related files under a parent.
+- 🗑️ **Confirm Delete**: Respects the native `explorer.confirmDelete` setting.
 - 🗂️ **Multi-Selection Support**: Supports Multi file or folder selection for Cut, Copy, Paste and Delete operations.
-- 🗂️ **Reveal & Copy Path**: Reveal in File Explorer, copy absolute/relative paths.
+- 🗂️ **Reveal & Copy Path**: Reveal in File Explorer, copy absolute/relative paths. Respects the native `explorer.copyPathSeparator` and `explorer.copyRelativePathSeparator` settings.
 - 🪟 **Open Folder in New Window**: Open any folder in a new VS Code window.
 - 🖉 **Improved Rename**: Renaming a folder updates open editors.
 - 🔄 **Quick Actions**: Refresh, open settings, and perform file operations.
@@ -33,6 +36,7 @@
 - 🙈 **Hide From Explorer**: Hide a configured root folder (does not remove from settings. Sets hidden to true).
 - 👻 **Hide Empty Directories**: Toggle visibility of empty folders to keep your view clean.
 - 🧭 **Quick Add**: Add selection to Secondary Explorer from the default explorer/editor context menu.
+- 📋 **Output Logs**: All operations are logged to the `SecondaryExplorer` output channel for easy debugging.
 
 ---
 
@@ -59,11 +63,12 @@
 - **New File/Folder**: Create files or folders directly via the toolbar or context menu.
 - **Rename/Delete**: Rename or delete files and folders through the right-click menu.
 - **Cut/Copy/Paste**: Move or duplicate items using context menu actions or standard keyboard shortcuts.
+- **Undo**: Press `Ctrl+Z` to revert the last move, copy+paste, or rename operation.
 - **Drag and Drop**: Move files and folders effortlessly within the Secondary Explorer.
 - **Reveal in File Explorer**: Open any file or folder in your OS file explorer.
 - **Reveal in Explorer View**: Quickly locate any item within the default VS Code Explorer.
 - **Reveal in Secondary Explorer**: Locate and focus any file or folder within the Secondary Explorer view.
-- **Copy Path/Relative Path**: Copy absolute or relative paths to your clipboard with a single click.
+- **Copy Path/Relative Path**: Copy absolute or relative paths to your clipboard with a single click. Respects the native `explorer.copyPathSeparator` and `explorer.copyRelativePathSeparator` settings.
 - **Open Folder in New Window**: Launch any folder in a fresh VS Code window.
 - **Open in Integrated Terminal**: Open the terminal at the specific path of any selected file or folder.
 - **Open to the Side**: Open files in a side-by-side editor group.
@@ -82,6 +87,7 @@ These are the following shortcut keys when focused in Secondary Explorer
 - `Ctrl+X`: Cut selected file or folder
 - `Ctrl+C`: Copy selected file or folder
 - `Ctrl+V`: Paste into selected folder
+- `Ctrl+Z`: Undo the last move, copy+paste, or rename
 - `F2`: Rename selected file or folder
 
 You can also toggle the view mode from the view title toolbar:

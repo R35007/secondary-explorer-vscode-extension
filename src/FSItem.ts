@@ -35,6 +35,7 @@ export class FSItem extends vscode.TreeItem {
   showEmptyDirectories?: boolean;
   viewAsList?: boolean;
   parent?: FSItem;
+  nestedChildren?: FSItem[];
 
   constructor(
     {

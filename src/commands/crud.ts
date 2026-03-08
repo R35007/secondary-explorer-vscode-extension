@@ -11,15 +11,24 @@ import { exists, getSelectedItems, getSeparators, getUniqueDestPath, log, normal
 
 const trash = require('trash').default;
 
+export type UndoAction =
+  | { type: 'move'; items: Array<{ from: string; to: string }> }
+  | { type: 'copy'; items: Array<{ to: string }> }
+  | { type: 'rename'; oldPath: string; newPath: string };
+
 function getOpenCommands(treeView: vscode.TreeView<FSItem>) {
   let lastOpenedFile: string | null = null;
 
   const openFile = async (item?: FSItem) => {
     try {
+      log('Open file');
       const selectedFiles = getSelectedItems(treeView).filter((i) => i.type === 'file');
       const filesToOpen = selectedFiles.length <= 1 && item ? (item.type === 'file' ? [item] : []) : selectedFiles;
 
-      if (!filesToOpen.length) return;
+      if (!filesToOpen.length) {
+        log('No files to open');
+        return;
+      }
 
       const results = await Promise.allSettled(
         filesToOpen.map((fileItem) => {
@@ -51,10 +60,14 @@ function getOpenCommands(treeView: vscode.TreeView<FSItem>) {
 
   const openToTheSide = async (item?: FSItem) => {
     try {
+      log('Open file to the side');
       const selectedFiles = getSelectedItems(treeView).filter((i) => i.type === 'file');
       const filesToOpen = selectedFiles.length <= 1 && item ? (item.type === 'file' ? [item] : []) : selectedFiles;
 
-      if (!filesToOpen.length) return;
+      if (!filesToOpen.length) {
+        log('No files to open');
+        return;
+      }
 
       // Batch open with Promise.allSettled
       const results = await Promise.allSettled(
@@ -84,8 +97,12 @@ function getOpenCommands(treeView: vscode.TreeView<FSItem>) {
 
   const openInTerminal = async (item?: FSItem) => {
     try {
+      log('Open in terminal');
       const treeViewItem = item || getSelectedItems(treeView).at(-1);
-      if (!treeViewItem) return;
+      if (!treeViewItem) {
+        log('No item selected');
+        return;
+      }
 
       const targetPath = treeViewItem.type === 'file' ? path.dirname(treeViewItem.basePath) : treeViewItem.basePath;
       const term = vscode.window.createTerminal({ cwd: targetPath });
@@ -98,8 +115,12 @@ function getOpenCommands(treeView: vscode.TreeView<FSItem>) {
 
   const openFolderInNewWindow = async (item?: FSItem) => {
     try {
+      log('Open folder in new window');
       const treeViewItem = item || getSelectedItems(treeView).at(-1);
-      if (!treeViewItem) return;
+      if (!treeViewItem) {
+        log('No item selected');
+        return;
+      }
 
       let targetUri: vscode.Uri;
 
@@ -137,16 +158,23 @@ function getOpenCommands(treeView: vscode.TreeView<FSItem>) {
 function getCreateCommands(treeView: vscode.TreeView<FSItem>, provider: TreeDataProvider) {
   const createFile = async (item?: FSItem) => {
     try {
+      log('Create file');
       const selectedItem = item || getSelectedItems(treeView).at(-1);
 
       const isSingleRoot = provider.explorerPaths.length === 1;
       const pathObj = provider.explorerPaths[0];
 
-      if (!selectedItem && !isSingleRoot) return;
+      if (!selectedItem && !isSingleRoot) {
+        log('No item selected');
+        return;
+      }
 
       const treeViewItem = !selectedItem && isSingleRoot ? new FSItem({ ...pathObj, isRoot: true }) : selectedItem;
 
-      if (!treeViewItem) return;
+      if (!treeViewItem) {
+        log('No item selected');
+        return;
+      }
 
       const basePath = treeViewItem.type === 'folder' ? treeViewItem.basePath : path.dirname(treeViewItem.basePath);
 
@@ -162,7 +190,10 @@ function getCreateCommands(treeView: vscode.TreeView<FSItem>, provider: TreeData
           return undefined;
         },
       });
-      if (!value) return;
+      if (!value) {
+        log('Cancelled');
+        return;
+      }
 
       const rel = normalizePath(value);
       const target = path.resolve(basePath, rel);
@@ -179,16 +210,23 @@ function getCreateCommands(treeView: vscode.TreeView<FSItem>, provider: TreeData
 
   const createFolder = async (item?: FSItem) => {
     try {
+      log('Create folder');
       const selectedItem = item || getSelectedItems(treeView).at(-1);
 
       const isSingleRoot = provider.explorerPaths.length === 1;
       const pathObj = provider.explorerPaths[0];
 
-      if (!selectedItem && !isSingleRoot) return;
+      if (!selectedItem && !isSingleRoot) {
+        log('No item selected');
+        return;
+      }
 
       const treeViewItem = !selectedItem && isSingleRoot ? new FSItem({ ...pathObj, isRoot: true }) : selectedItem;
 
-      if (!treeViewItem) return;
+      if (!treeViewItem) {
+        log('No item selected');
+        return;
+      }
 
       const basePath = treeViewItem.type === 'folder' ? treeViewItem.basePath : path.dirname(treeViewItem.basePath);
 
@@ -204,7 +242,10 @@ function getCreateCommands(treeView: vscode.TreeView<FSItem>, provider: TreeData
           return undefined;
         },
       });
-      if (!value) return;
+      if (!value) {
+        log('Cancelled');
+        return;
+      }
 
       const rel = normalizePath(value);
       const target = path.resolve(basePath, rel);
@@ -222,16 +263,26 @@ function getCreateCommands(treeView: vscode.TreeView<FSItem>, provider: TreeData
   };
 }
 
-function getCutCopyPasteCommands(treeView: vscode.TreeView<FSItem>, provider: TreeDataProvider) {
+function getClipboardCommands(treeView: vscode.TreeView<FSItem>, provider: TreeDataProvider, undoState: { action: UndoAction | null }) {
   let clipboard: { type: 'cut' | 'copy'; items: FSItem[] } | null = null; // Clipboard state for cut/copy/paste
 
   const cutEntry = async (item?: FSItem) => {
     try {
+      log('Cut');
       const selectedItems = getSelectedItems(treeView);
       let items = selectedItems.length <= 1 && item ? [item] : selectedItems;
 
+      const hasRootOrTagCut = items.some((i) => i.isRoot || i.isTag);
       items = items.filter((i) => !i.isRoot && !i.isTag);
-      if (!items.length) return;
+      if (!items.length) {
+        if (hasRootOrTagCut) {
+          await vscode.window.showWarningMessage('Root paths defined in your settings cannot be cut.');
+          log('Cannot cut: selected item is a root path or tag.');
+        } else {
+          log('No items to cut');
+        }
+        return;
+      }
 
       clipboard = { type: 'cut', items };
       vscode.window.setStatusBarMessage(`Cut!`, 1500);
@@ -243,6 +294,7 @@ function getCutCopyPasteCommands(treeView: vscode.TreeView<FSItem>, provider: Tr
 
   const copyEntry = async (item?: FSItem) => {
     try {
+      log('Copy');
       const selectedItems = getSelectedItems(treeView);
       clipboard = { type: 'copy', items: selectedItems.length <= 1 && item ? [item] : selectedItems };
       vscode.window.setStatusBarMessage(`Copied!`, 1500);
@@ -254,8 +306,12 @@ function getCutCopyPasteCommands(treeView: vscode.TreeView<FSItem>, provider: Tr
 
   const copyPath = async (item?: FSItem) => {
     try {
+      log('Copy path');
       const treeViewItem = item || getSelectedItems(treeView).at(-1);
-      if (!treeViewItem) return;
+      if (!treeViewItem) {
+        log('No item selected');
+        return;
+      }
       const { copyPathSeparator } = getSeparators();
       await vscode.env.clipboard.writeText(treeViewItem.basePath.replace(/[\/\\]/g, copyPathSeparator));
       vscode.window.setStatusBarMessage('Path copied to clipboard', 1500);
@@ -267,8 +323,12 @@ function getCutCopyPasteCommands(treeView: vscode.TreeView<FSItem>, provider: Tr
 
   const copyRelativePath = async (item?: FSItem) => {
     try {
+      log('Copy relative path');
       const treeViewItem = item || getSelectedItems(treeView).at(-1);
-      if (!treeViewItem) return;
+      if (!treeViewItem) {
+        log('No item selected');
+        return;
+      }
 
       const { copyRelativePathSeparator } = getSeparators();
 
@@ -290,8 +350,12 @@ function getCutCopyPasteCommands(treeView: vscode.TreeView<FSItem>, provider: Tr
 
   const copyToWorkspaceRoot = async (item?: FSItem) => {
     try {
+      log('Copy to workspace root');
       const treeViewItem = item || getSelectedItems(treeView).at(-1);
-      if (!treeViewItem) return;
+      if (!treeViewItem) {
+        log('No item selected');
+        return;
+      }
 
       // Ensure there is an active workspace
       const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -321,22 +385,32 @@ function getCutCopyPasteCommands(treeView: vscode.TreeView<FSItem>, provider: Tr
 
   const pasteEntry = async (item?: FSItem) => {
     try {
+      log('Paste');
       if (!clipboard || clipboard.items.length === 0) {
+        log('Clipboard is empty');
         vscode.window.setStatusBarMessage('Clipboard is empty', 1500);
         return;
       }
 
       const treeViewItem = item || getSelectedItems(treeView).at(0);
-      if (!treeViewItem) return;
+      if (!treeViewItem) {
+        log('No destination selected');
+        return;
+      }
       const destPath = treeViewItem.type === 'file' ? path.dirname(treeViewItem.basePath) : treeViewItem.basePath;
 
       const itemsToCopy = clipboard?.items ?? [];
 
       // Sanity check - ensure all items exist before proceeding
-      if (!itemsToCopy.length) return;
+      if (!itemsToCopy.length) {
+        log('Nothing to paste');
+        return;
+      }
 
       const hasFolder = itemsToCopy.some((i) => i.type === 'folder');
       const showProgress = itemsToCopy.length > 1 || hasFolder;
+      const clipboardType = clipboard?.type;
+      const pastedItems: Array<{ from: string; to: string }> = [];
 
       const doPaste = async (progress?: vscode.Progress<unknown>, cancelToken?: vscode.CancellationToken) => {
         for (const [idx, item] of itemsToCopy.entries()) {
@@ -355,6 +429,7 @@ function getCutCopyPasteCommands(treeView: vscode.TreeView<FSItem>, provider: Tr
             } else {
               await fsExtra.move(item.basePath, newPath, { overwrite: false });
             }
+            pastedItems.push({ from: item.basePath, to: newPath });
           } catch {}
 
           if (showProgress && progress) {
@@ -380,6 +455,13 @@ function getCutCopyPasteCommands(treeView: vscode.TreeView<FSItem>, provider: Tr
       } else {
         await doPaste();
       }
+      if (pastedItems.length > 0) {
+        if (clipboardType === 'copy') {
+          undoState.action = { type: 'copy', items: pastedItems.map((p) => ({ to: p.to })) };
+        } else {
+          undoState.action = { type: 'move', items: pastedItems };
+        }
+      }
       log(`Pasted items into: ${destPath}`);
     } catch (err) {
       log(`Paste failed: ${String(err)}`);
@@ -388,8 +470,12 @@ function getCutCopyPasteCommands(treeView: vscode.TreeView<FSItem>, provider: Tr
 
   const moveToWorkspaceRoot = async (item?: FSItem) => {
     try {
+      log('Move to workspace root');
       const treeViewItem = item || getSelectedItems(treeView).at(-1);
-      if (!treeViewItem) return;
+      if (!treeViewItem) {
+        log('No item selected');
+        return;
+      }
 
       // Ensure there is an active workspace
       const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -417,6 +503,37 @@ function getCutCopyPasteCommands(treeView: vscode.TreeView<FSItem>, provider: Tr
     }
   };
 
+  const undoEntry = async () => {
+    try {
+      if (!undoState.action) {
+        vscode.window.setStatusBarMessage('Nothing to undo', 1500);
+        return;
+      }
+
+      const action = undoState.action;
+      undoState.action = null;
+
+      if (action.type === 'move') {
+        for (const item of action.items) {
+          await fsExtra.move(item.to, item.from, { overwrite: false });
+        }
+        vscode.window.setStatusBarMessage('Undo: move reverted', 1500);
+      } else if (action.type === 'copy') {
+        for (const item of action.items) {
+          await fsExtra.remove(item.to);
+        }
+        vscode.window.setStatusBarMessage('Undo: copied items removed', 1500);
+      } else if (action.type === 'rename') {
+        await fsExtra.move(action.newPath, action.oldPath, { overwrite: false });
+        vscode.window.setStatusBarMessage('Undo: rename reverted', 1500);
+      }
+
+      log('Undo completed');
+    } catch (err) {
+      log(`Undo failed: ${String(err)}`);
+    }
+  };
+
   return {
     cutEntry,
     copyEntry,
@@ -425,14 +542,24 @@ function getCutCopyPasteCommands(treeView: vscode.TreeView<FSItem>, provider: Tr
     copyToWorkspaceRoot,
     pasteEntry,
     moveToWorkspaceRoot,
+    undoEntry,
   };
 }
 
-function getEditCommands(treeView: vscode.TreeView<FSItem>) {
+function getEditCommands(treeView: vscode.TreeView<FSItem>, undoState: { action: UndoAction | null }) {
   const renameEntry = async (item?: FSItem) => {
     try {
+      log('Rename');
       const treeViewItem = item || getSelectedItems(treeView).at(-1);
-      if (!treeViewItem || treeViewItem.isRoot || treeViewItem.isTag) return;
+      if (!treeViewItem) {
+        log('Cannot rename: no valid item selected');
+        return;
+      }
+      if (treeViewItem.isRoot || treeViewItem.isTag) {
+        await vscode.window.showWarningMessage('Root paths defined in your settings cannot be renamed.');
+        log('Cannot rename: selected item is a root path or tag.');
+        return;
+      }
 
       const oldPath = treeViewItem.basePath;
       const parentDir = path.dirname(oldPath);
@@ -452,7 +579,10 @@ function getEditCommands(treeView: vscode.TreeView<FSItem>) {
           return undefined;
         },
       });
-      if (!value) return;
+      if (!value) {
+        log('Cancelled');
+        return;
+      }
 
       const rel = normalizePath(value.trim());
       const newPath = path.resolve(parentDir, rel);
@@ -470,7 +600,10 @@ function getEditCommands(treeView: vscode.TreeView<FSItem>) {
         } else {
           // Nested folder rename
           const contents = await fsExtra.readdir(oldPath);
-          if (contents.length > 0) return;
+          if (contents.length > 0) {
+            log('Cannot rename: folder is not empty');
+            return;
+          }
           // Folder empty → allow nested rename
           await fsExtra.ensureDir(newPath);
           await fsExtra.remove(oldPath);
@@ -487,6 +620,7 @@ function getEditCommands(treeView: vscode.TreeView<FSItem>) {
           await vscode.window.showTextDocument(doc);
         }
       }
+      undoState.action = { type: 'rename', oldPath, newPath };
       log(`Renamed ${oldPath} → ${newPath}`);
     } catch (err) {
       log(`Rename failed: ${String(err)}`);
@@ -495,11 +629,21 @@ function getEditCommands(treeView: vscode.TreeView<FSItem>) {
 
   const deleteEntry = async (item?: FSItem) => {
     try {
+      log('Delete');
       const selectedItems = getSelectedItems(treeView);
       let itemsToDelete = selectedItems.length <= 1 && item ? [item] : selectedItems;
 
+      const hasRootOrTagDelete = itemsToDelete.some((i) => i.isRoot || i.isTag);
       itemsToDelete = itemsToDelete.filter((i) => !i.isRoot && !i.isTag);
-      if (itemsToDelete.length === 0) return;
+      if (itemsToDelete.length === 0) {
+        if (hasRootOrTagDelete) {
+          await vscode.window.showWarningMessage('Root paths defined in your settings cannot be deleted.');
+          log('Cannot delete: selected item is a root path or tag.');
+        } else {
+          log('No items to delete');
+        }
+        return;
+      }
 
       const names = itemsToDelete.map((s) => (typeof s.label === 'string' ? s.label : (s.label?.label ?? s.basePath)));
 
@@ -513,8 +657,25 @@ function getEditCommands(treeView: vscode.TreeView<FSItem>) {
           'Delete Permanently',
         );
 
-        if (!confirm) return;
+        if (!confirm) {
+          log('Cancelled');
+          return;
+        }
         deleteBehavior = confirm === 'Delete (Move to Recycle Bin)' ? 'recycleBin' : 'permanent';
+      }
+
+      if (Settings.deleteBehavior !== 'alwaysAsk' && Settings.confirmDelete) {
+        // explorer.confirmDelete is true — ask for confirmation but keep the configured deleteBehavior
+        const confirmed = await vscode.window.showWarningMessage(
+          `Are you sure you want to delete the following ${itemsToDelete.length > 1 ? 'items' : 'item'}?\n${names.join('\n')}`,
+          { modal: true },
+          'Delete',
+        );
+
+        if (!confirmed) {
+          log('Cancelled');
+          return;
+        }
       }
 
       const hasFolder = selectedItems.some((i) => i.type === 'folder');
@@ -549,7 +710,7 @@ function getEditCommands(treeView: vscode.TreeView<FSItem>) {
         await vscode.window.withProgress(
           {
             location: vscode.ProgressLocation.Notification,
-            title: confirm === 'Delete Permanently' ? 'Deleting Permanently' : 'Deleting',
+            title: deleteBehavior === 'permanent' ? 'Deleting Permanently' : 'Deleting',
             cancellable: true,
           },
           async (progress, cancelToken) => {
@@ -573,16 +734,16 @@ function getEditCommands(treeView: vscode.TreeView<FSItem>) {
   return { renameEntry, deleteEntry };
 }
 
-export function getCrudCommands(treeView: vscode.TreeView<FSItem>, provider: TreeDataProvider) {
+export function getCrudCommands(treeView: vscode.TreeView<FSItem>, provider: TreeDataProvider, undoState: { action: UndoAction | null }) {
   const openCommands = getOpenCommands(treeView);
   const createCommands = getCreateCommands(treeView, provider);
-  const cutCopyPasteCommands = getCutCopyPasteCommands(treeView, provider);
-  const editCommands = getEditCommands(treeView);
+  const clipboardCommands = getClipboardCommands(treeView, provider, undoState);
+  const editCommands = getEditCommands(treeView, undoState);
 
   const crudCommands = {
     ...openCommands,
     ...createCommands,
-    ...cutCopyPasteCommands,
+    ...clipboardCommands,
     ...editCommands,
   };
 

@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import { NO_TAGS } from '../constants';
 import { FSItem } from '../FSItem';
 import { NormalizedPaths, Settings } from '../Settings';
-import { log, normalizePath, safePromise } from '../utils';
+import { log, normalizePath, safePromise, setContext } from '../utils';
 export class TreeDataProvider implements vscode.TreeDataProvider<FSItem> {
   public explorerPaths: NormalizedPaths[] = [];
   public tags: string[] = [];
@@ -19,7 +19,12 @@ export class TreeDataProvider implements vscode.TreeDataProvider<FSItem> {
     this.loadPaths();
 
     vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration('workbench.iconTheme') || e.affectsConfiguration('workbench.tree.renderIcons')) {
+      if (
+        e.affectsConfiguration('workbench.iconTheme') ||
+        e.affectsConfiguration('workbench.tree.renderIcons') ||
+        e.affectsConfiguration('explorer.fileNesting.enabled') ||
+        e.affectsConfiguration('explorer.fileNesting.patterns')
+      ) {
         this.refresh();
       }
     });
@@ -27,6 +32,7 @@ export class TreeDataProvider implements vscode.TreeDataProvider<FSItem> {
 
   loadPaths() {
     this.explorerPaths = Settings.parsedPaths;
+    setContext('secondaryExplorer.hasConfiguredPaths', Settings.paths.length > 0);
     // 1. Get unique tags and filter out the "NO_TAGS" value
     const rawTags = [...new Set(this.explorerPaths.map((p) => p.tags).flat())];
 
@@ -38,7 +44,6 @@ export class TreeDataProvider implements vscode.TreeDataProvider<FSItem> {
   }
 
   refresh(element?: FSItem): void {
-    log('Provider refreshed');
     this.#onDidChangeTreeData.fire(element);
   }
 
@@ -181,7 +186,72 @@ export class TreeDataProvider implements vscode.TreeDataProvider<FSItem> {
       );
     }
 
-    return this.getSortedItemsByPattern(items, element.sortOrderPattern);
+    return this.applyFileNesting(this.getSortedItemsByPattern(items, element.sortOrderPattern));
+  }
+
+  private applyFileNesting(items: FSItem[]): FSItem[] {
+    if (!Settings.fileNestingEnabled) return items;
+    const patterns = Settings.fileNestingPatterns;
+    if (!patterns || Object.keys(patterns).length === 0) return items;
+
+    const files = items.filter((item) => item.type === 'file');
+    const folders = items.filter((item) => item.type === 'folder');
+
+    // Map from parent file basePath -> nested child FSItems
+    const nestingMap = new Map<string, FSItem[]>();
+    // Set of child paths that are nested under a parent
+    const nestedPaths = new Set<string>();
+
+    for (const [parentGlob, childGlobsStr] of Object.entries(patterns)) {
+      const childGlobs = childGlobsStr
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      for (const parentFile of files) {
+        // A file that is already nested cannot also act as a parent
+        if (nestedPaths.has(parentFile.basePath)) continue;
+
+        const parentName = path.basename(parentFile.basePath);
+        if (!micromatch.isMatch(parentName, parentGlob, { dot: true, nocase: true })) continue;
+
+        // Extract what the first '*' captured in the parent glob
+        const captures = micromatch.capture(parentGlob, parentName, { dot: true, nocase: true });
+        const capture = captures ? (captures[0] ?? parentName) : parentName;
+
+        // Resolve $(capture) placeholders in each child glob
+        const resolvedChildPatterns = childGlobs.map((g) => g.replace(/\$\(capture\)/g, capture));
+
+        for (const childFile of files) {
+          if (childFile.basePath === parentFile.basePath) continue;
+          if (nestedPaths.has(childFile.basePath)) continue;
+
+          const childName = path.basename(childFile.basePath);
+          if (resolvedChildPatterns.some((p) => micromatch.isMatch(childName, p, { dot: true, nocase: true }))) {
+            if (!nestingMap.has(parentFile.basePath)) nestingMap.set(parentFile.basePath, []);
+            nestingMap.get(parentFile.basePath)!.push(childFile);
+            nestedPaths.add(childFile.basePath);
+          }
+        }
+      }
+    }
+
+    const result: FSItem[] = [...folders];
+    for (const file of files) {
+      if (nestedPaths.has(file.basePath)) continue; // hidden — rendered as child of its parent
+      const children = nestingMap.get(file.basePath);
+      if (children?.length) {
+        file.nestedChildren = children;
+        file.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
+        // ThemeIcon.File + resourceUri tells VS Code to resolve the icon via the
+        // file icon theme as a *file* (isDirectory=false), avoiding the folder icon
+        // that collapsible state would otherwise trigger.
+        file.iconPath = new vscode.ThemeIcon('file');
+      }
+      result.push(file);
+    }
+
+    return result;
   }
 
   private async renderSingleRoot() {
@@ -215,7 +285,11 @@ export class TreeDataProvider implements vscode.TreeDataProvider<FSItem> {
 
   async getChildren(element?: FSItem): Promise<FSItem[]> {
     try {
-      if (!element) return await this.renderRootItems();
+      if (!element) {
+        const items = await this.renderRootItems();
+        setContext('secondaryExplorer.hasValidPaths', items.length > 0);
+        return items;
+      }
       if (element.isTag) {
         const parentItem = new FSItem({ tag: element.tag });
         return await this.renderMultipleRoot(
@@ -223,6 +297,8 @@ export class TreeDataProvider implements vscode.TreeDataProvider<FSItem> {
           parentItem,
         );
       }
+      // File nesting: return pre-computed nested children for a parent file
+      if (element.nestedChildren?.length) return element.nestedChildren;
       return await this.getChildrenItems(element as FSItem);
     } catch (err) {
       log(`Something went wrong!: ${String(err)}`);

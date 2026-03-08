@@ -148,6 +148,18 @@ export class Settings {
     return (Settings.getSettings('itemsSortOrderPattern') as string[]) || [];
   }
 
+  static get confirmDelete() {
+    return vscode.workspace.getConfiguration('explorer').get('confirmDelete') as boolean;
+  }
+
+  static get fileNestingEnabled() {
+    return vscode.workspace.getConfiguration('explorer').get('fileNesting.enabled') as boolean;
+  }
+
+  static get fileNestingPatterns() {
+    return (vscode.workspace.getConfiguration('explorer').get('fileNesting.patterns') ?? {}) as Record<string, string>;
+  }
+
   static get parsedPaths() {
     const paths = [...Settings.paths];
 

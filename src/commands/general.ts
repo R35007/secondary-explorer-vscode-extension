@@ -10,6 +10,7 @@ import { getSelectedItems, getSettingSaveTarget, log, pickPaths, pickTags, resol
 export function getGeneralCommands(treeView: vscode.TreeView<FSItem>, provider: TreeDataProvider) {
   const addToSecondaryExplorer = async (arg: vscode.Uri | FSItem) => {
     try {
+      log('Add to Secondary Explorer');
       const userHome = process.env.HOME || process.env.USERPROFILE || '';
       const isCallingFromNativeExplorer = arg && 'scheme' in arg && typeof arg.scheme === 'string';
 
@@ -22,14 +23,20 @@ export function getGeneralCommands(treeView: vscode.TreeView<FSItem>, provider: 
           defaultUri: vscode.workspace?.workspaceFolders?.[0].uri || vscode.Uri.file(userHome),
         });
 
-        if (!picked) return;
+        if (!picked) {
+          log('Cancelled');
+          return;
+        }
         uris = picked;
       }
 
       // 2. If we haven't asked the user in THIS session yet, prompt them
       if (!Settings.hasWorkspacePathSetting && Settings._sessionTarget === undefined) {
         const choice = await getSettingSaveTarget();
-        if (!choice) return;
+        if (!choice) {
+          log('Cancelled');
+          return;
+        }
         Settings._sessionTarget = choice;
       }
 
@@ -52,11 +59,15 @@ export function getGeneralCommands(treeView: vscode.TreeView<FSItem>, provider: 
 
   const addSelectedToWorkspace = async (item?: FSItem) => {
     try {
+      log('Add to workspace');
       const selectedItems = getSelectedItems(treeView);
       // If multiple items are selected, pick the last one
       const targetItem = selectedItems.length <= 1 && item ? item : selectedItems.at(-1);
 
-      if (!targetItem) return;
+      if (!targetItem) {
+        log('No item selected');
+        return;
+      }
 
       // If it's a file, use its parent folder
       let folderPath: string;
@@ -70,7 +81,10 @@ export function getGeneralCommands(treeView: vscode.TreeView<FSItem>, provider: 
 
       // Prevent duplicates: check if already in workspace
       const existing = vscode.workspace.workspaceFolders?.some((f) => f.uri.fsPath === folderUri.fsPath);
-      if (existing) return;
+      if (existing) {
+        log('Already in workspace');
+        return;
+      }
 
       // Add folder to workspace
       vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0, null, {
@@ -86,10 +100,17 @@ export function getGeneralCommands(treeView: vscode.TreeView<FSItem>, provider: 
 
   const removePath = async (item?: FSItem) => {
     try {
+      log('Remove path');
       const treeViewItem = item || getSelectedItems(treeView).at(-1);
-      if (!treeViewItem) return;
+      if (!treeViewItem) {
+        log('No item selected');
+        return;
+      }
 
-      if (treeViewItem.rootIndex < 0) return;
+      if (treeViewItem.rootIndex < 0) {
+        log('Not a root item');
+        return;
+      }
       Settings.paths = Settings.paths.filter((_, index) => index !== treeViewItem.rootIndex);
       vscode.window.setStatusBarMessage('Path removed from Secondary Explorer', 1500);
       log(`Removed root path from Secondary Explorer: ${treeViewItem.basePath}`);
@@ -100,10 +121,17 @@ export function getGeneralCommands(treeView: vscode.TreeView<FSItem>, provider: 
 
   const hidePath = async (item?: FSItem) => {
     try {
+      log('Hide path');
       const treeViewItem = item || getSelectedItems(treeView).at(-1);
-      if (!treeViewItem) return;
+      if (!treeViewItem) {
+        log('No item selected');
+        return;
+      }
 
-      if (treeViewItem.rootIndex < 0) return;
+      if (treeViewItem.rootIndex < 0) {
+        log('Not a root item');
+        return;
+      }
 
       Settings.updatePathConfig(treeViewItem.rootIndex, { hidden: true });
       vscode.window.setStatusBarMessage('Path set to hidden from Secondary Explorer', 1500);
@@ -135,8 +163,12 @@ export function getGeneralCommands(treeView: vscode.TreeView<FSItem>, provider: 
 
   const assignTagToPaths = async (item: FSItem) => {
     try {
+      log('Assign tags');
       const treeItem = item || getSelectedItems(treeView).at(-1);
-      if (!treeItem || !treeItem.tag || !treeItem.isTag) return;
+      if (!treeItem || !treeItem.tag || !treeItem.isTag) {
+        log('Not a valid tag item');
+        return;
+      }
 
       if (treeItem.tag === NO_TAGS) {
         await handleNoTagsAssignment();
@@ -144,7 +176,7 @@ export function getGeneralCommands(treeView: vscode.TreeView<FSItem>, provider: 
         await handleTagAssignment([treeItem.tag]);
       }
 
-      log(`Tags updated successfully.`);
+      log(`Tags assigned successfully`);
     } catch (err) {
       log(`Failed to assign tags: ${err}`);
     }
@@ -152,18 +184,25 @@ export function getGeneralCommands(treeView: vscode.TreeView<FSItem>, provider: 
 
   const editPathTags = async (item: FSItem) => {
     try {
+      log('Edit tags');
       const treeViewItem = item || getSelectedItems(treeView).at(-1);
-      if (!treeViewItem || treeViewItem.rootIndex < 0) return;
+      if (!treeViewItem || treeViewItem.rootIndex < 0) {
+        log('Not a valid root item');
+        return;
+      }
 
       const updatedTags = await pickTags(
         provider.tags.filter((t) => t !== NO_TAGS),
         item.tags,
       );
-      if (!updatedTags) return;
+      if (!updatedTags) {
+        log('Cancelled');
+        return;
+      }
 
       Settings.updatePathConfig(treeViewItem.rootIndex, { tags: updatedTags });
 
-      log(`Tas update in Secondary Explorer: ${treeViewItem.basePath}`);
+      log(`Tags updated: ${treeViewItem.basePath}`);
     } catch (err) {
       log(`Failed to edit tags in Secondary Explorer: ${String(err)}`);
     }
