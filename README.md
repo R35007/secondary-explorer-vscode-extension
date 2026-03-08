@@ -19,6 +19,7 @@
 - 🗂️ **Multi-Folder Support**: Display and organize multiple local folders.
 - ➡️ **Drag and Drop**: Easily move files and folders within the secondary explorer.
 - 🔀 **Tree/List Toggle**: Switch between hierarchical tree and flat list views at the path level.
+- 🖼️ **Custom Icons**: Specify a custom icon per configured path using the `icon` property. Use an absolute path to an SVG/PNG file or a VS Code ThemeIcon name (e.g., `folder`, `book`, `star`).
 - 🗄️ **File & Folder Operations**: Create, view, rename, delete files/folders.
 - 🔎 **Pattern Filtering**: Filter files/folders per root using include/exclude glob patterns (e.g., show only Markdown files: `*.md`).
 - ✂️ **Cut, Copy, Paste**: Move or duplicate files/folders.
@@ -123,6 +124,7 @@ You can configure which folders and files appear in the **Secondary Explorer** t
     // Rich object configuration
     {
       "basePath": "${workspaceFolders[0]}", // supports variables like ${workspaceFolder}, ${workspaceFolders[1]} ${userHome}
+      "icon": "folder", // optional: ThemeIcon name or absolute path to an icon file
       "name": "${workspaceFolderName} - Docs", // dynamic labels
       "description": "${workspaceFolder}", // Shows only on the root item
       "tooltip": "Workspace Folder", // Shows only on the root item. By default shows the absolute path of the item
@@ -153,6 +155,7 @@ You can configure which folders and files appear in the **Secondary Explorer** t
     {
       "basePath": "${workspaceFolder}",
       "name": "All Workspace Files",
+      "icon": "C:/path/to/custom-icon.svg",
       "include": ["**/*"],
       "exclude": ["node_modules", "dist", "build", "out", ".vscode-test"],
       "tags": ["Others"],
@@ -161,6 +164,7 @@ You can configure which folders and files appear in the **Secondary Explorer** t
       "basePath": "${userHome}/repo",
       "name": "${workspaceFolderName} Docs",
       "description": "Documents",
+      "icon": "book",
       "tooltip": "Shows only markdown and text files",
       "include": ["**/*.{md,markdown,txt}"],
       "tags": ["Documents", "Markdowns", "Assets"],

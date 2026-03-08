@@ -4,6 +4,12 @@ All notable changes to the "secondary-explorer" extension will be documented in 
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [16.1.0] - 2026-03-08
+
+- Added: Per-path `icon` support in `secondaryExplorer.paths`. You can now specify an `icon` for each configured path. The value may be an absolute path to an SVG/PNG file or a VS Code ThemeIcon name (for example, `folder`, `book`, `star`, or other product icons).
+- Updated: Documentation updated to show how to add `icon` to path objects in the settings and examples.
+- Added: `Add to Secondary Explorer` context menu now appears on Secondary Explorer items as well, making it easy to add nested folders or files directly from the Secondary Explorer view.
+
 ## [16.0.0] - 2026-03-08
 
 - Added: **Undo** command (`Ctrl+Z`) to revert the last file operation (cut+paste move, copy+paste, rename, or drag-and-drop move). Only the most recent action is tracked — one level of undo.
