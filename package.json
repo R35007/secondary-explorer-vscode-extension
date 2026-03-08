@@ -179,6 +179,11 @@
         "icon": "$(refresh)"
       },
       {
+        "command": "secondary-explorer.pickAndAddToSecondaryExplorer",
+        "title": "Add File/Folder to Secondary Explorer...",
+        "icon": "$(add)"
+      },
+      {
         "command": "secondary-explorer.addToSecondaryExplorer",
         "title": "Add to Secondary Explorer",
         "icon": "$(add)"
@@ -710,13 +715,13 @@
     "viewsWelcome": [
       {
         "view": "secondaryExplorerView",
-        "contents": "No paths configured.\n[Add Folder to Explorer](command:secondary-explorer.addToSecondaryExplorer)",
-        "when": "!secondaryExplorer.hasConfiguredPaths"
+        "contents": "No paths configured.\n[Add Folder to Explorer](command:secondary-explorer.pickAndAddToSecondaryExplorer)",
+        "when": "secondaryExplorer.isActivated && !secondaryExplorer.hasConfiguredPaths"
       },
       {
         "view": "secondaryExplorerView",
-        "contents": "No valid paths found. All configured paths are inaccessible or do not exist.\n[Open Settings](command:secondary-explorer.openSettings)\n[Add Folder to Explorer](command:secondary-explorer.addToSecondaryExplorer)",
-        "when": "secondaryExplorer.hasConfiguredPaths && !secondaryExplorer.hasValidPaths"
+        "contents": "No valid paths found. All configured paths are inaccessible or do not exist.\n[Open Settings](command:secondary-explorer.openSettings)\n[Add Folder to Explorer](command:secondary-explorer.pickAndAddToSecondaryExplorer)",
+        "when": "secondaryExplorer.isActivated && secondaryExplorer.hasConfiguredPaths && !secondaryExplorer.hasValidPaths"
       }
     ],
     "menus": {
@@ -879,7 +884,7 @@
           "group": "navigation@4"
         },
         {
-          "command": "secondary-explorer.addToSecondaryExplorer",
+          "command": "secondary-explorer.pickAndAddToSecondaryExplorer",
           "when": "view == secondaryExplorerView",
           "group": "secondaryExplorer@1"
         },

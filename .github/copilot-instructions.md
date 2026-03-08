@@ -81,7 +81,6 @@ src/
 - **Windows**: check `isWindows` for path separator logic; validate names against `windowsInvalidName` regex.
 - **Config key prefix**: all VS Code settings use the `secondaryExplorer.` namespace.
 - **Command ID prefix**: all commands use the `secondary-explorer.` namespace.
-- **`adm-zip`** is installed as a dependency (recently added) — use it for zip operations if needed.
 
 ---
 
@@ -105,4 +104,3 @@ src/
 - **Path watchers** are recreated from scratch on every config change. The `cleanupRegistered` guard in `registerPathWatchers.ts` ensures only a single disposal entry is added to `context.subscriptions`.
 - **`NO_TAGS` constant** (`'** no tags **'`) is a sentinel used to bucket untagged paths — don't use it as a real tag name.
 - **Webpack bundles to a single `dist/extension.js`** — after editing source, run `npm run compile` or keep `npm run watch` running; the raw TS is never loaded directly.
-- **`adm-zip`** requires a native-friendly require pattern since the bundle targets Node — import as `const AdmZip = require('adm-zip')` (not ESM).

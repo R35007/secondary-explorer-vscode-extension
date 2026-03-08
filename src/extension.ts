@@ -73,6 +73,8 @@ export async function activate(context: vscode.ExtensionContext) {
   });
 
   context.subscriptions.push(treeView.onDidChangeSelection((e) => setContext('secondaryExplorer.hasSelection', e.selection.length > 0)));
+
+  await setContext('secondaryExplorer.isActivated', true);
   log('Secondary Explorer extension activated successfully');
 }
 

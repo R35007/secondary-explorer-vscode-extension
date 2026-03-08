@@ -8,27 +8,67 @@ import { Settings } from '../Settings';
 import { getSelectedItems, getSettingSaveTarget, log, pickPaths, pickTags, resolveVariables } from '../utils';
 
 export function getGeneralCommands(treeView: vscode.TreeView<FSItem>, provider: TreeDataProvider) {
-  const addToSecondaryExplorer = async (arg: vscode.Uri | FSItem) => {
+  const pickAndAddToSecondaryExplorer = async () => {
     try {
-      log('Add to Secondary Explorer');
+      log('Browse path and add to Secondary Explorer');
       const userHome = process.env.HOME || process.env.USERPROFILE || '';
-      const isCallingFromNativeExplorer = arg && 'scheme' in arg && typeof arg.scheme === 'string';
 
-      let uris: vscode.Uri[] = [arg] as vscode.Uri[];
-      if (!isCallingFromNativeExplorer) {
-        const picked = await vscode.window.showOpenDialog({
-          canSelectFolders: true,
-          canSelectFiles: true,
-          canSelectMany: true,
-          defaultUri: vscode.workspace?.workspaceFolders?.[0].uri || vscode.Uri.file(userHome),
-        });
+      const picked = await vscode.window.showOpenDialog({
+        canSelectFolders: true,
+        canSelectFiles: true,
+        canSelectMany: true,
+        defaultUri: vscode.workspace?.workspaceFolders?.[0].uri || vscode.Uri.file(userHome),
+      });
 
-        if (!picked) {
+      if (!picked) {
+        log('Cancelled');
+        return;
+      }
+
+      // 2. If we haven't asked the user in THIS session yet, prompt them
+      if (!Settings.hasWorkspacePathSetting && Settings._sessionTarget === undefined) {
+        const choice = await getSettingSaveTarget();
+        if (!choice) {
           log('Cancelled');
           return;
         }
-        uris = picked;
+        Settings._sessionTarget = choice;
       }
+
+      const pathsToAdd = picked
+        .filter(Boolean)
+        .map((u) =>
+          resolveVariables(
+            Settings.addFoldersOnly && fsx.statSync(u.fsPath).isFile() ? path.dirname(u.fsPath) : u.fsPath,
+            Settings.hasWorkspacePathSetting || Settings._sessionTarget === vscode.ConfigurationTarget.Workspace,
+            Settings.useAbsolutePath,
+          ),
+        )
+        .filter(Boolean);
+
+      if (!pathsToAdd.length) {
+        log('No valid paths to add');
+        return;
+      }
+
+      Settings.paths = [...Settings.paths, ...pathsToAdd];
+      log(`Added paths to Secondary Explorer: ${pathsToAdd.join(', ')}`);
+    } catch (err) {
+      log(`Failed to add paths to Secondary Explorer: ${String(err)}`);
+    }
+  };
+  const addToSecondaryExplorer = async (arg?: vscode.Uri | FSItem) => {
+    try {
+      log('Add to Secondary Explorer');
+      const isVsCodeUri = arg && 'scheme' in arg && typeof arg.scheme === 'string';
+      const treeViewItem = !isVsCodeUri && ((arg || getSelectedItems(treeView).at(-1)) as FSItem | undefined);
+
+      if (!isVsCodeUri && !treeViewItem) {
+        log('No item selected');
+        return;
+      }
+
+      let uris: vscode.Uri[] = isVsCodeUri ? ([arg] as vscode.Uri[]) : treeViewItem ? [vscode.Uri.file(treeViewItem.basePath)] : [];
 
       // 2. If we haven't asked the user in THIS session yet, prompt them
       if (!Settings.hasWorkspacePathSetting && Settings._sessionTarget === undefined) {
@@ -48,7 +88,13 @@ export function getGeneralCommands(treeView: vscode.TreeView<FSItem>, provider: 
             Settings.hasWorkspacePathSetting || Settings._sessionTarget === vscode.ConfigurationTarget.Workspace,
             Settings.useAbsolutePath,
           ),
-        );
+        )
+        .filter(Boolean);
+
+      if (!pathsToAdd.length) {
+        log('No valid paths to add');
+        return;
+      }
 
       Settings.paths = [...Settings.paths, ...pathsToAdd];
       log(`Added paths to Secondary Explorer: ${pathsToAdd.join(', ')}`);
@@ -217,8 +263,13 @@ export function getGeneralCommands(treeView: vscode.TreeView<FSItem>, provider: 
   };
 
   const generalCommands = {
-    refresh: () => provider.refresh?.(),
+    refresh: () => {
+      provider.loadPaths();
+      provider.refresh();
+      vscode.window.showInformationMessage('Secondary Explorer refreshed.');
+    },
     openSettings,
+    pickAndAddToSecondaryExplorer,
     addToSecondaryExplorer,
     addSelectedToWorkspace,
     removePath,
